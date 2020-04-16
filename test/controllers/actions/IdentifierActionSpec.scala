@@ -23,7 +23,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.mvc.{BodyParsers, Results}
+import play.api.mvc.{Action, AnyContent, BodyParsers, Results}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core._
@@ -41,7 +41,7 @@ class IdentifierActionSpec extends PlaySpec with MockitoSugar with GuiceOneAppPe
   val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
 
   class Harness(authAction: IdentifierAction) {
-    def onPageLoad() = authAction { _ => Results.Ok }
+    def onPageLoad(): Action[AnyContent] = authAction { _ => Results.Ok }
   }
 
   lazy val trustsAuth = new TrustsAuthorisedFunctions(mockAuthConnector, appConfig)
@@ -50,7 +50,7 @@ class IdentifierActionSpec extends PlaySpec with MockitoSugar with GuiceOneAppPe
 
   val agentInformation = AgentInformation(None, None, None)
 
-  def fakeRequest = FakeRequest("", "")
+  private def fakeRequest = FakeRequest("", "")
 
   private def authRetrievals(affinityGroup: AffinityGroup,
                              enrolment: Enrolments,
@@ -59,7 +59,7 @@ class IdentifierActionSpec extends PlaySpec with MockitoSugar with GuiceOneAppPe
 
   private val agentEnrolment = Enrolments(Set(Enrolment("HMRC-AS-AGENT", List(EnrolmentIdentifier("AgentReferenceNumber", "SomeVal")), "Activated", None)))
 
-  val bodyParsers = app.injector.instanceOf[BodyParsers.Default]
+  private val bodyParsers = app.injector.instanceOf[BodyParsers.Default]
 
   protected def applicationBuilder(affinityGroup: AffinityGroup = AffinityGroup.Organisation,
                                    enrolments: Enrolments = Enrolments(Set.empty[Enrolment])
@@ -70,26 +70,6 @@ class IdentifierActionSpec extends PlaySpec with MockitoSugar with GuiceOneAppPe
       )
 
   "invoking an AuthenticatedIdentifier" when {
-
-    "an Agent user hasn't enrolled an Agent Services Account" must {
-
-      "redirect the user to the create agent services page" in {
-
-        val application = applicationBuilder().build()
-
-        when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
-          .thenReturn(authRetrievals(AffinityGroup.Agent, noEnrollment, agentInformation))
-
-        val action = new AuthenticatedIdentifierAction(appConfig, trustsAuth, bodyParsers)
-
-        val controller = new Harness(action)
-        val result = controller.onPageLoad()(fakeRequest)
-
-        status(result) mustBe SEE_OTHER
-        redirectLocation(result) mustBe Some(appConfig.createAgentServicesAccountUrl)
-        application.stop()
-      }
-    }
 
     "Agent user has correct enrolled in Agent Services Account" must {
       "allow user to continue" in {
