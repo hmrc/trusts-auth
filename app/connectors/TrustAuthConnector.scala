@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.trustsauth.config
+package connectors
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import play.api.libs.json.{Format, Json}
 
-@Singleton
-class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig) {
+case class TrustAuthResponseBody(redirectUrl: Option[String] = None)
 
-  val authBaseUrl: String = servicesConfig.baseUrl("auth")
-
-  val auditingEnabled: Boolean = config.get[Boolean]("auditing.enabled")
-  val graphiteHost: String     = config.get[String]("microservice.metrics.graphite.host")
+object TrustAuthResponseBody {
+  implicit val format: Format[TrustAuthResponseBody] = Json.format[TrustAuthResponseBody]
 }
+
+trait TrustAuthResponse
+
+object TrustAuthAllowed extends TrustAuthResponse
+case class TrustAuthDenied(redirectUrl: String) extends TrustAuthResponse
+object TrustAuthInternalServerError extends TrustAuthResponse
+
