@@ -16,7 +16,7 @@
 
 package controllers.actions
 
-import com.google.inject.Inject
+import com.google.inject.{ImplementedBy, Inject}
 import config.AppConfig
 import models.{AgentUser, IdentifierRequest, OrganisationUser}
 import play.api.Logger
@@ -31,6 +31,7 @@ import uk.gov.hmrc.play.HeaderCarrierConverter
 
 import scala.concurrent.{ExecutionContext, Future}
 
+@ImplementedBy(classOf[AuthenticatedIdentifierAction])
 trait IdentifierAction extends ActionBuilder[IdentifierRequest, AnyContent] with ActionFunction[Request, IdentifierRequest]
 
 class AuthenticatedIdentifierAction @Inject()(

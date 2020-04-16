@@ -1,5 +1,3 @@
 # microservice specific routes
 
-GET        /hello-world             controllers.MicroserviceHelloWorldController.hello
-
 GET        /authorised/:utr         controllers.TrustAuthController.authorised(utr: String)

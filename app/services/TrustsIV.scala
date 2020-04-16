@@ -17,8 +17,8 @@
 package services
 
 import com.google.inject.Inject
-import connectors.TrustAuthResponse
 import controllers.actions.TrustsAuthorisedFunctions
+import models.TrustAuthResponse
 import play.api.Logger
 import uk.gov.hmrc.auth.core.{BusinessKey, FailedRelationship, Relationship}
 import uk.gov.hmrc.http.HeaderCarrier

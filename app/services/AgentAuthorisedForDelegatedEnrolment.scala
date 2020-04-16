@@ -18,8 +18,8 @@ package services
 
 import com.google.inject.Inject
 import config.AppConfig
-import connectors.{TrustAuthAllowed, TrustAuthDenied, TrustAuthResponse}
 import controllers.actions.TrustsAuthorisedFunctions
+import models.{TrustAuthAllowed, TrustAuthDenied, TrustAuthResponse}
 import play.api.Logger
 import uk.gov.hmrc.auth.core.{Enrolment, InsufficientEnrolments}
 import uk.gov.hmrc.http.HeaderCarrier

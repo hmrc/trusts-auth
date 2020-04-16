@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package connectors
+package models
 
 import play.api.libs.json.{Format, Json}
 
@@ -29,4 +29,3 @@ trait TrustAuthResponse
 object TrustAuthAllowed extends TrustAuthResponse
 case class TrustAuthDenied(redirectUrl: String) extends TrustAuthResponse
 object TrustAuthInternalServerError extends TrustAuthResponse
-

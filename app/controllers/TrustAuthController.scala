@@ -18,10 +18,10 @@ package controllers
 
 import com.google.inject.{Inject, Singleton}
 import config.AppConfig
-import connectors.{EnrolmentStoreConnector, TrustAuthAllowed, TrustAuthDenied, TrustAuthInternalServerError, TrustAuthResponse, TrustAuthResponseBody}
+import connectors.EnrolmentStoreConnector
 import controllers.actions.IdentifierAction
 import models.EnrolmentStoreResponse.{AlreadyClaimed, NotClaimed}
-import models.IdentifierRequest
+import models._
 import play.api.Logger
 import play.api.i18n.I18nSupport
 import play.api.libs.json.Json
