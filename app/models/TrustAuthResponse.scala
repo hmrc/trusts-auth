@@ -26,6 +26,6 @@ object TrustAuthResponseBody {
 
 trait TrustAuthResponse
 
-object TrustAuthAllowed extends TrustAuthResponse
+case object TrustAuthAllowed extends TrustAuthResponse
 case class TrustAuthDenied(redirectUrl: String) extends TrustAuthResponse
-object TrustAuthInternalServerError extends TrustAuthResponse
+case object TrustAuthInternalServerError extends TrustAuthResponse

@@ -27,7 +27,7 @@ import play.api.i18n.I18nSupport
 import play.api.libs.json.Json
 import play.api.mvc._
 import services.{AgentAuthorisedForDelegatedEnrolment, TrustsIV}
-import uk.gov.hmrc.auth.core.AffinityGroup.Agent
+import uk.gov.hmrc.auth.core.AffinityGroup.{Agent, Organisation}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.controller.FrontendBaseController
@@ -50,8 +50,10 @@ class TrustAuthController @Inject()(val controllerComponents: MessagesController
       val result = request.user.affinityGroup match {
         case Agent =>
           checkIfAgentAuthorised(utr)
-        case _ =>
+        case Organisation =>
           checkIfTrustIsClaimedAndTrustIV(utr)
+        case _ =>
+          Future.successful(TrustAuthDenied(config.unauthorisedUrl))
       }
 
       result map {

@@ -32,3 +32,6 @@ case class OrganisationUser(internalId: String, enrolments: Enrolments) extends 
   override val affinityGroup: AffinityGroup = AffinityGroup.Organisation
 }
 
+case class IndividualUser(internalId: String, enrolments: Enrolments) extends User {
+  override val affinityGroup: AffinityGroup = AffinityGroup.Individual
+}

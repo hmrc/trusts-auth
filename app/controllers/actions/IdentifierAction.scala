@@ -18,11 +18,12 @@ package controllers.actions
 
 import com.google.inject.{ImplementedBy, Inject}
 import config.AppConfig
-import models.{AgentUser, IdentifierRequest, OrganisationUser}
+import models.{AgentUser, IdentifierRequest, IndividualUser, OrganisationUser}
 import play.api.Logger
+import play.api.http.Status.UNAUTHORIZED
 import play.api.mvc.Results._
 import play.api.mvc._
-import uk.gov.hmrc.auth.core.AffinityGroup.{Agent, Organisation}
+import uk.gov.hmrc.auth.core.AffinityGroup.{Agent, Individual, Organisation}
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.auth.core.retrieve.~
 import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
@@ -34,7 +35,6 @@ import scala.concurrent.{ExecutionContext, Future}
 trait IdentifierAction extends ActionBuilder[IdentifierRequest, AnyContent] with ActionFunction[Request, IdentifierRequest]
 
 class AuthenticatedIdentifierAction @Inject()(
-                                               config: AppConfig,
                                                trustsAuthFunctions: TrustsAuthorisedFunctions,
                                                val parser: BodyParsers.Default
                                              )
@@ -55,12 +55,14 @@ class AuthenticatedIdentifierAction @Inject()(
       case Some(internalId) ~ Some(Organisation) ~ enrolments =>
         Logger.info(s"[AuthenticatedIdentifierAction] successfully identified as Organisation")
         block(IdentifierRequest(request, OrganisationUser(internalId, enrolments)))
-      case Some(_) ~ _ ~ _ =>
+      case Some(internalId) ~ Some(Individual) ~ enrolments =>
         Logger.info(s"[AuthenticatedIdentifierAction] Unauthorised due to affinityGroup being Individual")
-        Future.successful(Redirect(config.unauthorisedUrl))
+        block(IdentifierRequest(request, IndividualUser(internalId, enrolments)))
       case _ =>
         Logger.warn(s"[AuthenticatedIdentifierAction] Unable to retrieve internal id")
         throw new UnauthorizedException("Unable to retrieve internal Id")
-    } recover trustsAuthFunctions.recoverFromAuthorisation
+    } recover {
+      case _ => Status(UNAUTHORIZED)
+    }
   }
 }
