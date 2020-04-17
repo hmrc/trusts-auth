@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.trustsauth.config
+package controllers.actions
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import com.google.inject.Inject
+import config.AppConfig
+import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions}
 
-@Singleton
-class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig) {
+class TrustsAuthorisedFunctions @Inject()(override val authConnector: AuthConnector,
+                                          val config: AppConfig) extends AuthorisedFunctions {
 
-  val authBaseUrl: String = servicesConfig.baseUrl("auth")
-
-  val auditingEnabled: Boolean = config.get[Boolean]("auditing.enabled")
-  val graphiteHost: String     = config.get[String]("microservice.metrics.graphite.host")
 }

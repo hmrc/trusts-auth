@@ -14,20 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.trustsauth.controllers
+package models
 
-import javax.inject.{Inject, Singleton}
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
-import uk.gov.hmrc.trustsauth.config.AppConfig
+import play.api.libs.json.{Format, Json}
 
-import scala.concurrent.Future
+case class TrustAuthResponseBody(redirectUrl: Option[String] = None)
 
-@Singleton()
-class MicroserviceHelloWorldController @Inject()(appConfig: AppConfig, cc: ControllerComponents)
-    extends BackendController(cc) {
-
-  def hello(): Action[AnyContent] = Action.async { implicit request =>
-    Future.successful(Ok("Hello world"))
-  }
+object TrustAuthResponseBody {
+  implicit val format: Format[TrustAuthResponseBody] = Json.format[TrustAuthResponseBody]
 }
+
+trait TrustAuthResponse
+
+case object TrustAuthAllowed extends TrustAuthResponse
+case class TrustAuthDenied(redirectUrl: String) extends TrustAuthResponse
+case object TrustAuthInternalServerError extends TrustAuthResponse
