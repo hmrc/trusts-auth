@@ -33,10 +33,10 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core._
-import uk.gov.hmrc.auth.core.retrieve.{EmptyRetrieval, Retrieval, ~}
+import uk.gov.hmrc.auth.core.retrieve.{AgentInformation, EmptyRetrieval, Retrieval, ~}
 import uk.gov.hmrc.http.HeaderCarrier
-import scala.concurrent.ExecutionContext.Implicits.global
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with MockitoSugar with ScalaFutures with EitherValues with RecoverMethods {
@@ -93,7 +93,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
           val app = applicationBuilder().build()
 
-          val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorised(utr).url)
+          val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
 
           val result = route(app, request).value
           status(result) mustBe OK
@@ -115,7 +115,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
           val app = applicationBuilder().build()
 
-          val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorised(utr).url)
+          val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
 
           val result = route(app, request).value
           status(result) mustBe OK
@@ -148,7 +148,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
           val app = applicationBuilder().build()
 
-          val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorised(utr).url)
+          val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
 
           val result = route(app, request).value
           status(result) mustBe OK
@@ -185,7 +185,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
           val app = applicationBuilder().build()
 
-          val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorised(utr).url)
+          val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
 
           val result = route(app, request).value
           status(result) mustBe OK
@@ -215,7 +215,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
             val app = applicationBuilder().build()
 
-            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorised(utr).url)
+            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
 
             val result = route(app, request).value
             status(result) mustBe OK
@@ -240,7 +240,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
             val app = applicationBuilder().build()
 
-            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorised(utr).url)
+            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
 
             val result = route(app, request).value
             status(result) mustBe OK
@@ -266,7 +266,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
             val app = applicationBuilder().build()
 
-            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorised(utr).url)
+            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
 
             val result = route(app, request).value
             status(result) mustBe INTERNAL_SERVER_ERROR
@@ -287,7 +287,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
             val app = applicationBuilder().build()
 
-            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorised(utr).url)
+            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
 
             val result = route(app, request).value
             status(result) mustBe OK
@@ -311,7 +311,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
             val app = applicationBuilder().build()
 
-            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorised(utr).url)
+            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
 
             val result = route(app, request).value
             status(result) mustBe OK
@@ -333,11 +333,53 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
       when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
         .thenReturn(Future failed BearerTokenExpired())
 
-      val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorised(utr).url)
+      val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
 
       val futuristicResult = route(app, request).value
       recoverToSucceededIf[BearerTokenExpired](futuristicResult)
     }
   }
 
+  "invoking authenticate" when {
+
+    "an Agent user hasn't enrolled an Agent Services Account" must {
+
+      "redirect the user to the create agent services page" in {
+
+        val noEnrollment = Enrolments(Set())
+
+        val app = applicationBuilder().build()
+
+        when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+          .thenReturn(authRetrievals(AffinityGroup.Agent, noEnrollment))
+
+        val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorised().url)
+        val result = route(app, request).value
+
+        status(result) mustBe OK
+
+        val responseBody = contentAsJson(result).as[TrustAuthResponseBody]
+        responseBody.redirectUrl mustBe Some(appConfig.createAgentServicesAccountUrl)
+      }
+    }
+    "Agent user has correct enrolled in Agent Services Account" must {
+      "allow authentication" in {
+        val agentEnrolment = Enrolments(Set(Enrolment("HMRC-AS-AGENT", List(EnrolmentIdentifier("AgentReferenceNumber", "SomeVal")), "Activated", None)))
+
+        val app = applicationBuilder().build()
+
+        when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+          .thenReturn(authRetrievals(AffinityGroup.Agent, agentEnrolment))
+
+        val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorised().url)
+        val result = route(app, request).value
+
+        status(result) mustBe OK
+
+        val responseBody = contentAsJson(result).as[TrustAuthResponseBody]
+        responseBody.redirectUrl mustBe None
+
+      }
+    }
+  }
 }
