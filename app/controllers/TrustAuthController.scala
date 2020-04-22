@@ -25,9 +25,11 @@ import models._
 import play.api.Logger
 import play.api.i18n.I18nSupport
 import play.api.libs.json.Json
+import play.api.mvc.Results.Redirect
 import play.api.mvc._
 import services.{AgentAuthorisedForDelegatedEnrolment, TrustsIV}
 import uk.gov.hmrc.auth.core.AffinityGroup.{Agent, Organisation}
+import uk.gov.hmrc.auth.core.{EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.controller.FrontendBaseController
@@ -43,7 +45,7 @@ class TrustAuthController @Inject()(val controllerComponents: MessagesController
                                     delegatedEnrolment: AgentAuthorisedForDelegatedEnrolment
                                )(implicit ec: ExecutionContext) extends FrontendBaseController with I18nSupport {
 
-  def authorised(utr: String): Action[AnyContent] = identifierAction.async {
+  def authorisedForUtr(utr: String): Action[AnyContent] = identifierAction.async {
     implicit request =>
       implicit val hc : HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
 
@@ -62,6 +64,42 @@ class TrustAuthController @Inject()(val controllerComponents: MessagesController
         case TrustAuthInternalServerError => InternalServerError
       }
   }
+
+  def authorised(): Action[AnyContent] = identifierAction.async {
+    implicit request =>
+      implicit val hc : HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
+      val result = request.user.affinityGroup match {
+        case Agent =>
+          Future.successful(authoriseAgent(request))
+        case Organisation =>
+          Future.successful(TrustAuthAllowed)
+        case _ =>
+          Future.successful(TrustAuthDenied(config.unauthorisedUrl))
+      }
+
+      result map {
+        case TrustAuthAllowed => Ok(Json.toJson(TrustAuthResponseBody()))
+        case TrustAuthDenied(redirectUrl) => Ok(Json.toJson(TrustAuthResponseBody(Some(redirectUrl))))
+        case TrustAuthInternalServerError => InternalServerError
+      }
+  }
+
+  private def authoriseAgent[A](request: IdentifierRequest[A]): TrustAuthResponse = {
+
+    getAgentReferenceNumber(request.user.enrolments) match {
+      case Some(arn) if arn.nonEmpty =>
+        TrustAuthAllowed
+      case _ =>
+        Logger.info(s"[AuthenticatedIdentifierAction][authoriseAgent]: Not a valid agent service account")
+        TrustAuthDenied(config.createAgentServicesAccountUrl)
+    }
+  }
+
+  private def getAgentReferenceNumber(enrolments: Enrolments) =
+    enrolments.enrolments
+      .find(_.key equals "HMRC-AS-AGENT")
+      .flatMap(_.identifiers.find(_.key equals "AgentReferenceNumber"))
+      .collect { case EnrolmentIdentifier(_, value) => value }
 
   private def checkIfTrustIsClaimedAndTrustIV[A](utr: String)
                                                 (implicit request: IdentifierRequest[A],

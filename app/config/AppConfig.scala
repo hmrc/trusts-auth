@@ -34,6 +34,7 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
   lazy val alreadyClaimedUrl: String = config.get[String]("urls.alreadyClaimed")
   lazy val trustNotClaimedUrl: String = config.get[String]("urls.trustNotClaimed")
   lazy val agentNotAuthorisedUrl: String = config.get[String]("urls.agentNotAuthorised")
+  lazy val createAgentServicesAccountUrl: String = config.get[String]("urls.createAgentServicesAccount")
 
   lazy val relationshipName: String =
     config.get[String]("microservice.services.self.relationship-establishment.name")
