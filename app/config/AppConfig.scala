@@ -27,8 +27,6 @@ class AppConfig @Inject()(config: Configuration) {
   val auditingEnabled: Boolean = config.get[Boolean]("auditing.enabled")
   val graphiteHost: String     = config.get[String]("microservice.metrics.graphite.host")
 
-  lazy val loginUrl: String = config.get[String]("urls.login")
-  lazy val loginContinueUrl: String = config.get[String]("urls.loginContinue")
   lazy val unauthorisedUrl: String = config.get[String]("urls.unauthorised")
   lazy val alreadyClaimedUrl: String = config.get[String]("urls.alreadyClaimed")
   lazy val trustNotClaimedUrl: String = config.get[String]("urls.trustNotClaimed")
