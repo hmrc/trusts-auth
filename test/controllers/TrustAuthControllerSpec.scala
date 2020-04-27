@@ -23,9 +23,9 @@ import models.EnrolmentStoreResponse.{AlreadyClaimed, NotClaimed, ServerError}
 import models.TrustAuthResponseBody
 import org.mockito.Matchers.{any, eq => mEq}
 import org.mockito.Mockito.when
-import org.scalatestplus.mockito.MockitoSugar
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{EitherValues, RecoverMethods}
+import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.inject.bind
@@ -33,7 +33,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core._
-import uk.gov.hmrc.auth.core.retrieve.{AgentInformation, EmptyRetrieval, Retrieval, ~}
+import uk.gov.hmrc.auth.core.retrieve.{EmptyRetrieval, Retrieval, ~}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -45,7 +45,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
   private val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
 
-  private val agentEnrolment = Enrolment("HMRC-AS-AGENT", List(EnrolmentIdentifier("AgentReferenceNumber", "SomeVal")), "Activated", None)
+  private val agentEnrolment = Enrolment("HMRC-AS-AGENT", List(EnrolmentIdentifier("AgentReferenceNumber", "SomeARN")), "Activated", None)
   private val trustsEnrolment = Enrolment("HMRC-TERS-ORG", List(EnrolmentIdentifier("SAUTR", utr)), "Activated", None)
 
   private val enrolments = Enrolments(Set(
@@ -353,7 +353,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
         when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
           .thenReturn(authRetrievals(AffinityGroup.Agent, noEnrollment))
 
-        val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorised().url)
+        val request = FakeRequest(GET, controllers.routes.TrustAuthController.agentAuthorised().url)
         val result = route(app, request).value
 
         status(result) mustBe OK
@@ -364,21 +364,21 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
     }
     "Agent user has correct enrolled in Agent Services Account" must {
       "allow authentication" in {
-        val agentEnrolment = Enrolments(Set(Enrolment("HMRC-AS-AGENT", List(EnrolmentIdentifier("AgentReferenceNumber", "SomeVal")), "Activated", None)))
+        val agentEnrolments = Enrolments(Set(agentEnrolment))
 
         val app = applicationBuilder().build()
 
         when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
-          .thenReturn(authRetrievals(AffinityGroup.Agent, agentEnrolment))
+          .thenReturn(authRetrievals(AffinityGroup.Agent, agentEnrolments))
 
-        val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorised().url)
+        val request = FakeRequest(GET, controllers.routes.TrustAuthController.agentAuthorised().url)
         val result = route(app, request).value
 
         status(result) mustBe OK
 
         val responseBody = contentAsJson(result).as[TrustAuthResponseBody]
         responseBody.redirectUrl mustBe None
-
+        responseBody.arn mustBe Some("SomeARN")
       }
     }
   }

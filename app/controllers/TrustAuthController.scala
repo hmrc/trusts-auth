@@ -65,7 +65,7 @@ class TrustAuthController @Inject()(val controllerComponents: MessagesController
       }
   }
 
-  def authorised(): Action[AnyContent] = identifierAction.async {
+  def agentAuthorised(): Action[AnyContent] = identifierAction.async {
     implicit request =>
       implicit val hc : HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
       val result = request.user.affinityGroup match {
@@ -79,7 +79,8 @@ class TrustAuthController @Inject()(val controllerComponents: MessagesController
 
       result map {
         case TrustAuthAllowed => Ok(Json.toJson(TrustAuthResponseBody()))
-        case TrustAuthDenied(redirectUrl) => Ok(Json.toJson(TrustAuthResponseBody(Some(redirectUrl))))
+        case TrustAuthAgentAllowed(arn) => Ok(Json.toJson(TrustAuthResponseBody(arn=Some(arn))))
+        case TrustAuthDenied(redirectUrl) => Ok(Json.toJson(TrustAuthResponseBody(redirectUrl=Some(redirectUrl))))
         case TrustAuthInternalServerError => InternalServerError
       }
   }
@@ -88,7 +89,7 @@ class TrustAuthController @Inject()(val controllerComponents: MessagesController
 
     getAgentReferenceNumber(request.user.enrolments) match {
       case Some(arn) if arn.nonEmpty =>
-        TrustAuthAllowed
+        TrustAuthAgentAllowed(arn)
       case _ =>
         Logger.info(s"[AuthenticatedIdentifierAction][authoriseAgent]: Not a valid agent service account")
         TrustAuthDenied(config.createAgentServicesAccountUrl)
