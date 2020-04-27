@@ -25,7 +25,6 @@ import models._
 import play.api.Logger
 import play.api.i18n.I18nSupport
 import play.api.libs.json.Json
-import play.api.mvc.Results.Redirect
 import play.api.mvc._
 import services.{AgentAuthorisedForDelegatedEnrolment, TrustsIV}
 import uk.gov.hmrc.auth.core.AffinityGroup.{Agent, Organisation}
