@@ -16,7 +16,7 @@
 
 package models
 
-import play.api.libs.json.{Format, Json, Reads, __}
+import play.api.libs.json.{Format, Json, Reads, Writes, __}
 
 sealed trait TrustAuthResponse
 object TrustAuthResponse {
@@ -24,6 +24,13 @@ object TrustAuthResponse {
     __.read[TrustAuthAllowed].widen[TrustAuthResponse] orElse
       __.read[TrustAuthAgentAllowed].widen[TrustAuthResponse] orElse
       __.read[TrustAuthDenied].widen[TrustAuthResponse]
+
+  implicit val writes: Writes[TrustAuthResponse] = Writes {
+    case r: TrustAuthAllowed => Json.toJson(r)(TrustAuthAllowed.format)
+    case r: TrustAuthAgentAllowed => Json.toJson(r)(TrustAuthAgentAllowed.format)
+    case r: TrustAuthDenied => Json.toJson(r)(TrustAuthDenied.format)
+    case TrustAuthInternalServerError => throw new RuntimeException("Can't write TrustAuthInternalServerError as Json")
+  }
 }
 
 case class TrustAuthAllowed(authorised: Boolean = true) extends TrustAuthResponse

@@ -73,10 +73,8 @@ class TrustAuthController @Inject()(val controllerComponents: MessagesController
   }
 
   private def mapResult(result: Future[Object]) = result map {
-    case r: TrustAuthAllowed => Ok(Json.toJson(r))
-    case r: TrustAuthAgentAllowed => Ok(Json.toJson(r))
-    case r: TrustAuthDenied => Ok(Json.toJson(r))
     case TrustAuthInternalServerError => InternalServerError
+    case r: TrustAuthResponse => Ok(Json.toJson(r))
   }
 
   private def authoriseAgent[A](request: IdentifierRequest[A]): TrustAuthResponse = {
