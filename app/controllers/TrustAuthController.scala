@@ -48,40 +48,35 @@ class TrustAuthController @Inject()(val controllerComponents: MessagesController
     implicit request =>
       implicit val hc : HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
 
-      val result = request.user.affinityGroup match {
+      mapResult(request.user.affinityGroup match {
         case Agent =>
           checkIfAgentAuthorised(utr)
         case Organisation =>
           checkIfTrustIsClaimedAndTrustIV(utr)
         case _ =>
           Future.successful(TrustAuthDenied(config.unauthorisedUrl))
-      }
-
-      result map {
-        case TrustAuthAllowed => Ok(Json.toJson(TrustAuthResponseBody()))
-        case TrustAuthDenied(redirectUrl) => Ok(Json.toJson(TrustAuthResponseBody(Some(redirectUrl))))
-        case TrustAuthInternalServerError => InternalServerError
-      }
+      })
   }
 
   def agentAuthorised(): Action[AnyContent] = identifierAction.async {
     implicit request =>
       implicit val hc : HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
-      val result = request.user.affinityGroup match {
+
+      mapResult(request.user.affinityGroup match {
         case Agent =>
           Future.successful(authoriseAgent(request))
         case Organisation =>
           Future.successful(TrustAuthAllowed)
         case _ =>
           Future.successful(TrustAuthDenied(config.unauthorisedUrl))
-      }
+      })
+  }
 
-      result map {
-        case TrustAuthAllowed => Ok(Json.toJson(TrustAuthResponseBody()))
-        case TrustAuthAgentAllowed(arn) => Ok(Json.toJson(TrustAuthResponseBody(arn=Some(arn))))
-        case TrustAuthDenied(redirectUrl) => Ok(Json.toJson(TrustAuthResponseBody(redirectUrl=Some(redirectUrl))))
-        case TrustAuthInternalServerError => InternalServerError
-      }
+  private def mapResult(result: Future[Object]) = result map {
+    case r: TrustAuthAllowed => Ok(Json.toJson(r))
+    case r: TrustAuthAgentAllowed => Ok(Json.toJson(r))
+    case r: TrustAuthDenied => Ok(Json.toJson(r))
+    case TrustAuthInternalServerError => InternalServerError
   }
 
   private def authoriseAgent[A](request: IdentifierRequest[A]): TrustAuthResponse = {
@@ -114,7 +109,7 @@ class TrustAuthController @Inject()(val controllerComponents: MessagesController
         utr = utr,
         onIVRelationshipExisting = {
           Logger.info(s"[PlaybackAuthentication] user is enrolled, redirecting to maintain")
-          Future.successful(TrustAuthAllowed)
+          Future.successful(TrustAuthAllowed())
         },
         onIVRelationshipNotExisting = {
           Logger.info(s"[PlaybackAuthentication] user is enrolled, redirecting to /verify-identity-for-a-trust")

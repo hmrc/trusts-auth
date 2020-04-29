@@ -20,7 +20,7 @@ import config.AppConfig
 import connectors.EnrolmentStoreConnector
 import controllers.actions.TrustsAuthorisedFunctions
 import models.EnrolmentStoreResponse.{AlreadyClaimed, NotClaimed, ServerError}
-import models.TrustAuthResponseBody
+import models.{TrustAuthAgentAllowed, TrustAuthAllowed, TrustAuthDenied, TrustAuthResponse}
 import org.mockito.Matchers.{any, eq => mEq}
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.ScalaFutures
@@ -98,8 +98,8 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
           val result = route(app, request).value
           status(result) mustBe OK
 
-          val responseBody = contentAsJson(result).as[TrustAuthResponseBody]
-          responseBody.redirectUrl mustBe None
+          val response = contentAsJson(result).as[TrustAuthResponse]
+          response mustBe TrustAuthAllowed()
         }
       }
 
@@ -120,8 +120,8 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
           val result = route(app, request).value
           status(result) mustBe OK
 
-          val responseBody = contentAsJson(result).as[TrustAuthResponseBody]
-          responseBody.redirectUrl mustBe Some(appConfig.trustNotClaimedUrl)
+          val response = contentAsJson(result).as[TrustAuthResponse]
+          response mustBe TrustAuthDenied(appConfig.trustNotClaimedUrl)
         }
       }
 
@@ -153,8 +153,8 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
           val result = route(app, request).value
           status(result) mustBe OK
 
-          val responseBody = contentAsJson(result).as[TrustAuthResponseBody]
-          responseBody.redirectUrl mustBe Some(appConfig.agentNotAuthorisedUrl)
+          val response = contentAsJson(result).as[TrustAuthResponse]
+          response mustBe TrustAuthDenied(appConfig.agentNotAuthorisedUrl)
         }
       }
 
@@ -190,8 +190,8 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
           val result = route(app, request).value
           status(result) mustBe OK
 
-          val responseBody = contentAsJson(result).as[TrustAuthResponseBody]
-          responseBody.redirectUrl mustBe Some(appConfig.agentNotAuthorisedUrl)
+          val response = contentAsJson(result).as[TrustAuthResponse]
+          response mustBe TrustAuthDenied(appConfig.agentNotAuthorisedUrl)
         }
       }
 
@@ -220,8 +220,8 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
             val result = route(app, request).value
             status(result) mustBe OK
 
-            val responseBody = contentAsJson(result).as[TrustAuthResponseBody]
-            responseBody.redirectUrl.get must include("/verify-your-identity-for-a-trust")
+            val response = contentAsJson(result).as[TrustAuthDenied]
+            response.redirectUrl must include("/verify-your-identity-for-a-trust")
           }
 
         }
@@ -245,8 +245,8 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
             val result = route(app, request).value
             status(result) mustBe OK
 
-            val responseBody = contentAsJson(result).as[TrustAuthResponseBody]
-            responseBody.redirectUrl mustBe None
+            val response = contentAsJson(result).as[TrustAuthResponse]
+            response mustBe TrustAuthAllowed()
           }
         }
       }
@@ -292,8 +292,8 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
             val result = route(app, request).value
             status(result) mustBe OK
 
-            val responseBody = contentAsJson(result).as[TrustAuthResponseBody]
-            responseBody.redirectUrl mustBe Some(appConfig.alreadyClaimedUrl)
+            val response = contentAsJson(result).as[TrustAuthResponse]
+            response mustBe TrustAuthDenied(appConfig.alreadyClaimedUrl)
           }
         }
 
@@ -316,8 +316,8 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
             val result = route(app, request).value
             status(result) mustBe OK
 
-            val responseBody = contentAsJson(result).as[TrustAuthResponseBody]
-            responseBody.redirectUrl.get must include("/claim-a-trust")
+            val response = contentAsJson(result).as[TrustAuthDenied]
+            response.redirectUrl must include("/claim-a-trust")
           }
         }
       }
@@ -358,8 +358,8 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
         status(result) mustBe OK
 
-        val responseBody = contentAsJson(result).as[TrustAuthResponseBody]
-        responseBody.redirectUrl mustBe Some(appConfig.createAgentServicesAccountUrl)
+        val response = contentAsJson(result).as[TrustAuthResponse]
+        response mustBe TrustAuthDenied(appConfig.createAgentServicesAccountUrl)
       }
     }
     "Agent user has correct enrolled in Agent Services Account" must {
@@ -376,9 +376,8 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
         status(result) mustBe OK
 
-        val responseBody = contentAsJson(result).as[TrustAuthResponseBody]
-        responseBody.redirectUrl mustBe None
-        responseBody.arn mustBe Some("SomeARN")
+        val response = contentAsJson(result).as[TrustAuthResponse]
+        response mustBe TrustAuthAgentAllowed("SomeARN")
       }
     }
   }
