@@ -25,7 +25,6 @@ import models._
 import play.api.Logger
 import play.api.i18n.I18nSupport
 import play.api.libs.json.Json
-import play.api.mvc.Results.Redirect
 import play.api.mvc._
 import services.{AgentAuthorisedForDelegatedEnrolment, TrustsIV}
 import uk.gov.hmrc.auth.core.AffinityGroup.{Agent, Organisation}
@@ -49,46 +48,40 @@ class TrustAuthController @Inject()(val controllerComponents: MessagesController
     implicit request =>
       implicit val hc : HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
 
-      val result = request.user.affinityGroup match {
+      mapResult(request.user.affinityGroup match {
         case Agent =>
           checkIfAgentAuthorised(utr)
         case Organisation =>
           checkIfTrustIsClaimedAndTrustIV(utr)
         case _ =>
           Future.successful(TrustAuthDenied(config.unauthorisedUrl))
-      }
-
-      result map {
-        case TrustAuthAllowed => Ok(Json.toJson(TrustAuthResponseBody()))
-        case TrustAuthDenied(redirectUrl) => Ok(Json.toJson(TrustAuthResponseBody(Some(redirectUrl))))
-        case TrustAuthInternalServerError => InternalServerError
-      }
+      })
   }
 
-  def authorised(): Action[AnyContent] = identifierAction.async {
+  def agentAuthorised(): Action[AnyContent] = identifierAction.async {
     implicit request =>
       implicit val hc : HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
-      val result = request.user.affinityGroup match {
+
+      mapResult(request.user.affinityGroup match {
         case Agent =>
           Future.successful(authoriseAgent(request))
         case Organisation =>
           Future.successful(TrustAuthAllowed)
         case _ =>
           Future.successful(TrustAuthDenied(config.unauthorisedUrl))
-      }
+      })
+  }
 
-      result map {
-        case TrustAuthAllowed => Ok(Json.toJson(TrustAuthResponseBody()))
-        case TrustAuthDenied(redirectUrl) => Ok(Json.toJson(TrustAuthResponseBody(Some(redirectUrl))))
-        case TrustAuthInternalServerError => InternalServerError
-      }
+  private def mapResult(result: Future[Object]) = result map {
+    case TrustAuthInternalServerError => InternalServerError
+    case r: TrustAuthResponse => Ok(Json.toJson(r))
   }
 
   private def authoriseAgent[A](request: IdentifierRequest[A]): TrustAuthResponse = {
 
     getAgentReferenceNumber(request.user.enrolments) match {
       case Some(arn) if arn.nonEmpty =>
-        TrustAuthAllowed
+        TrustAuthAgentAllowed(arn)
       case _ =>
         Logger.info(s"[AuthenticatedIdentifierAction][authoriseAgent]: Not a valid agent service account")
         TrustAuthDenied(config.createAgentServicesAccountUrl)
@@ -114,7 +107,7 @@ class TrustAuthController @Inject()(val controllerComponents: MessagesController
         utr = utr,
         onIVRelationshipExisting = {
           Logger.info(s"[PlaybackAuthentication] user is enrolled, redirecting to maintain")
-          Future.successful(TrustAuthAllowed)
+          Future.successful(TrustAuthAllowed())
         },
         onIVRelationshipNotExisting = {
           Logger.info(s"[PlaybackAuthentication] user is enrolled, redirecting to /verify-identity-for-a-trust")
