@@ -221,7 +221,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
             status(result) mustBe OK
 
             val response = contentAsJson(result).as[TrustAuthDenied]
-            response.redirectUrl must include("/verify-your-identity-for-a-trust")
+            response.redirectUrl must include("/maintain-this-trust")
           }
 
         }
