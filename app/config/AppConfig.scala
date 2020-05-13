@@ -32,12 +32,10 @@ class AppConfig @Inject()(config: Configuration) {
   lazy val trustNotClaimedUrl: String = config.get[String]("urls.trustNotClaimed")
   lazy val agentNotAuthorisedUrl: String = config.get[String]("urls.agentNotAuthorised")
   lazy val createAgentServicesAccountUrl: String = config.get[String]("urls.createAgentServicesAccount")
+  lazy val maintainThisTrust: String = config.get[String]("urls.maintainThisTrust")
 
   def claimATrustUrl(utr: String) =
     s"${config.get[String]("urls.startClaimATrust")}/$utr"
-
-  def verifyIdentityForATrustUrl(utr: String) =
-    s"${config.get[String]("urls.startVerifyIdentity")}/$utr"
 
   lazy val relationshipName: String =
     config.get[String]("microservice.services.self.relationship-establishment.name")

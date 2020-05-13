@@ -111,7 +111,7 @@ class TrustAuthController @Inject()(val controllerComponents: MessagesController
         },
         onIVRelationshipNotExisting = {
           Logger.info(s"[PlaybackAuthentication] user is enrolled, redirecting to /verify-identity-for-a-trust")
-          Future.successful(TrustAuthDenied(config.verifyIdentityForATrustUrl(utr)))
+          Future.successful(TrustAuthDenied(config.maintainThisTrust))
         }
       )
     } else {
