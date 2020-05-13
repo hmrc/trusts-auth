@@ -37,14 +37,14 @@ class AgentAuthorisedForDelegatedEnrolment @Inject()(trustsAuth: TrustsAuthorise
       .withDelegatedAuthRule("trust-auth")
 
     trustsAuth.authorised(predicate) {
-      Logger.info(s"[AgentAuthorisedForDelegatedEnrolment] agent is authorised for delegated enrolment")
+      Logger.info(s"[AgentAuthorisedForDelegatedEnrolment] agent is authorised for delegated enrolment for $utr")
       Future.successful(TrustAuthAllowed())
     } recover {
       case _ : InsufficientEnrolments =>
-        Logger.info(s"[AgentAuthorisedForDelegatedEnrolment] agent is not authorised for delegated enrolment")
+        Logger.info(s"[AgentAuthorisedForDelegatedEnrolment] agent is not authorised for delegated enrolment for $utr")
         TrustAuthDenied(config.agentNotAuthorisedUrl)
       case _ =>
-        Logger.info(s"[AgentAuthorisedForDelegatedEnrolment] agent is not authorised")
+        Logger.info(s"[AgentAuthorisedForDelegatedEnrolment] agent is not authorised for $utr")
         TrustAuthDenied(config.unauthorisedUrl)
     }
   }

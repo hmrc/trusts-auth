@@ -83,7 +83,7 @@ class TrustAuthController @Inject()(val controllerComponents: MessagesController
       case Some(arn) if arn.nonEmpty =>
         TrustAuthAgentAllowed(arn)
       case _ =>
-        Logger.info(s"[AuthenticatedIdentifierAction][authoriseAgent]: Not a valid agent service account")
+        Logger.info(s"[authoriseAgent] not a valid agent service account")
         TrustAuthDenied(config.createAgentServicesAccountUrl)
     }
   }
@@ -100,30 +100,33 @@ class TrustAuthController @Inject()(val controllerComponents: MessagesController
 
     val userEnrolled = checkForTrustEnrolmentForUTR(utr)
 
+    Logger.info(s"[checkIfTrustIsClaimedAndTrustIV] authenticating user for $utr")
+
     if (userEnrolled) {
-      Logger.info(s"[PlaybackAuthentication] user is enrolled")
+      Logger.info(s"[checkIfTrustIsClaimedAndTrustIV] user is enrolled for $utr")
 
       trustsIV.authenticate(
         utr = utr,
         onIVRelationshipExisting = {
-          Logger.info(s"[PlaybackAuthentication] user is enrolled, redirecting to maintain")
+          Logger.info(s"[checkIfTrustIsClaimedAndTrustIV] user has an IV session for $utr")
           Future.successful(TrustAuthAllowed())
         },
         onIVRelationshipNotExisting = {
-          Logger.info(s"[PlaybackAuthentication] user is enrolled, redirecting to /verify-identity-for-a-trust")
+          Logger.info(s"[checkIfTrustIsClaimedAndTrustIV] user does not have an IV session for $utr")
           Future.successful(TrustAuthDenied(config.maintainThisTrust))
         }
       )
     } else {
       enrolmentStoreConnector.checkIfAlreadyClaimed(utr) flatMap {
         case AlreadyClaimed =>
-          Logger.info(s"[PlaybackAuthentication] user is not enrolled but the trust is already claimed")
+          Logger.info(s"[checkIfTrustIsClaimedAndTrustIV] user is not enrolled for $utr and the trust is already claimed")
           Future.successful(TrustAuthDenied(config.alreadyClaimedUrl))
 
         case NotClaimed =>
-          Logger.info(s"[PlaybackAuthentication] user is not enrolled and the trust is not claimed")
+          Logger.info(s"[checkIfTrustIsClaimedAndTrustIV] user is not enrolled for $utr and the trust is not claimed")
           Future.successful(TrustAuthDenied(config.claimATrustUrl(utr)))
         case _ =>
+          Logger.info(s"[checkIfTrustIsClaimedAndTrustIV] unable to determine if $utr is already claimed")
           Future.successful(TrustAuthInternalServerError)
       }
     }
@@ -131,17 +134,22 @@ class TrustAuthController @Inject()(val controllerComponents: MessagesController
 
   private def checkIfAgentAuthorised[A](utr: String)
                                        (implicit request: Request[A],
-                                        hc: HeaderCarrier): Future[TrustAuthResponse] =
+                                        hc: HeaderCarrier): Future[TrustAuthResponse] = {
+
+    Logger.info(s"[checkIfAgentAuthorised] authenticating agent for $utr")
 
     enrolmentStoreConnector.checkIfAlreadyClaimed(utr) flatMap {
       case NotClaimed =>
-        Logger.info(s"[PlaybackAuthentication] trust is not claimed")
+        Logger.info(s"[checkIfAgentAuthorised] agent not authenticated for $utr, trust is not claimed")
         Future.successful(TrustAuthDenied(config.trustNotClaimedUrl))
       case AlreadyClaimed =>
+        Logger.info(s"[checkIfAgentAuthorised] $utr is claimed, checking if agent is authorised")
         delegatedEnrolment.authenticate(utr)
       case _ =>
+        Logger.info(s"[checkIfAgentAuthorised] unable to determine if $utr is already claimed")
         Future.successful(TrustAuthInternalServerError)
     }
+  }
 
   private def checkForTrustEnrolmentForUTR[A](utr: String)(implicit request: IdentifierRequest[A]): Boolean =
     request.user.enrolments.enrolments
