@@ -22,11 +22,14 @@ import models.TrustAuthResponse
 import play.api.Logger
 import uk.gov.hmrc.auth.core.{BusinessKey, FailedRelationship, Relationship}
 import uk.gov.hmrc.http.HeaderCarrier
+import utils.Session
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class TrustsIV @Inject()(trustsAuth: TrustsAuthorisedFunctions) {
 
+  private val logger: Logger = Logger(getClass)
+  
   def authenticate[A](utr: String,
                       onIVRelationshipExisting: Future[TrustAuthResponse],
                       onIVRelationshipNotExisting: Future[TrustAuthResponse]
@@ -39,7 +42,8 @@ class TrustsIV @Inject()(trustsAuth: TrustsAuthorisedFunctions) {
       onIVRelationshipExisting
     } recoverWith {
       case FailedRelationship(msg) =>
-        Logger.info(s"[IdentifyForPlayback] Relationship does not exist in Trust IV for user due to $msg")
+        logger.info(s"[IdentifyForPlayback][Session ID: ${Session.id(hc)}][UTR: $utr]" +
+          s" Relationship does not exist in Trust IV for user due to $msg")
         onIVRelationshipNotExisting
     }
   }

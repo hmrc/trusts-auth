@@ -23,10 +23,13 @@ import models.{TrustAuthAllowed, TrustAuthDenied, TrustAuthResponse}
 import play.api.Logger
 import uk.gov.hmrc.auth.core.{Enrolment, InsufficientEnrolments}
 import uk.gov.hmrc.http.HeaderCarrier
+import utils.Session
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class AgentAuthorisedForDelegatedEnrolment @Inject()(trustsAuth: TrustsAuthorisedFunctions, config: AppConfig) {
+
+  private val logger: Logger = Logger(getClass)
 
   def authenticate[A](utr: String)
                      (implicit hc: HeaderCarrier,
@@ -37,14 +40,14 @@ class AgentAuthorisedForDelegatedEnrolment @Inject()(trustsAuth: TrustsAuthorise
       .withDelegatedAuthRule("trust-auth")
 
     trustsAuth.authorised(predicate) {
-      Logger.info(s"[AgentAuthorisedForDelegatedEnrolment] agent is authorised for delegated enrolment for $utr")
+      logger.info(s"[Session ID: ${Session.id(hc)}] agent is authorised for delegated enrolment for $utr")
       Future.successful(TrustAuthAllowed())
     } recover {
       case _ : InsufficientEnrolments =>
-        Logger.info(s"[AgentAuthorisedForDelegatedEnrolment] agent is not authorised for delegated enrolment for $utr")
+        logger.info(s"[Session ID: ${Session.id(hc)}] agent is not authorised for delegated enrolment for $utr")
         TrustAuthDenied(config.agentNotAuthorisedUrl)
       case _ =>
-        Logger.info(s"[AgentAuthorisedForDelegatedEnrolment] agent is not authorised for $utr")
+        logger.info(s"[Session ID: ${Session.id(hc)}] agent is not authorised for $utr")
         TrustAuthDenied(config.unauthorisedUrl)
     }
   }
