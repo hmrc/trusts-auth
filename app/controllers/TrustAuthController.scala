@@ -143,8 +143,7 @@ class TrustAuthController @Inject()(val controllerComponents: MessagesController
   }
 
   private def checkIfAgentAuthorised[A](utr: String)
-                                       (implicit request: Request[A],
-                                        hc: HeaderCarrier): Future[TrustAuthResponse] = {
+                                       (implicit hc: HeaderCarrier): Future[TrustAuthResponse] = {
 
     logger.info(s"[checkIfAgentAuthorised][Session ID: ${Session.id(hc)}] authenticating agent for $utr")
 

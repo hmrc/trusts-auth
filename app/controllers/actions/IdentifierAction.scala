@@ -17,7 +17,6 @@
 package controllers.actions
 
 import com.google.inject.{ImplementedBy, Inject}
-import config.AppConfig
 import models.{AgentUser, IdentifierRequest, IndividualUser, OrganisationUser}
 import play.api.Logger
 import play.api.http.Status.UNAUTHORIZED
