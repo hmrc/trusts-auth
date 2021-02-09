@@ -22,8 +22,7 @@ import connectors.EnrolmentStoreConnector
 import controllers.actions.IdentifierAction
 import models.EnrolmentStoreResponse.{AlreadyClaimed, NotClaimed}
 import models._
-import play.api.Logger
-import play.api.i18n.I18nSupport
+import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc._
 import services.{AgentAuthorisedForDelegatedEnrolment, TrustsIV}
@@ -31,22 +30,20 @@ import uk.gov.hmrc.auth.core.AffinityGroup.{Agent, Organisation}
 import uk.gov.hmrc.auth.core.{EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
-import uk.gov.hmrc.play.bootstrap.controller.FrontendBaseController
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import utils.Session
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class TrustAuthController @Inject()(val controllerComponents: MessagesControllerComponents,
+class TrustAuthController @Inject()(cc: ControllerComponents,
                                     identifierAction: IdentifierAction,
                                     enrolmentStoreConnector: EnrolmentStoreConnector,
                                     config: AppConfig,
                                     trustsIV: TrustsIV,
                                     delegatedEnrolment: AgentAuthorisedForDelegatedEnrolment
-                               )(implicit ec: ExecutionContext) extends FrontendBaseController with I18nSupport {
+                               )(implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
 
-  private val logger: Logger = Logger(getClass)
-  
   def authorisedForUtr(utr: String): Action[AnyContent] = identifierAction.async {
     implicit request =>
       implicit val hc : HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)

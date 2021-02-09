@@ -16,17 +16,15 @@
 
 package models
 
-import play.api.Logger
+import play.api.Logging
 import play.api.http.Status._
 import play.api.libs.json._
 import uk.gov.hmrc.http.{HttpReads, HttpResponse}
 
 sealed trait EnrolmentStoreResponse
 
-object EnrolmentStoreResponse {
+object EnrolmentStoreResponse extends Logging {
 
-  private val logger: Logger = Logger(getClass)
-  
   implicit val format: Format[EnrolmentStore] = Json.format[EnrolmentStore]
 
   case class EnrolmentStore(principalUserIds: Seq[String], delegatedUserIds: Seq[String]) extends EnrolmentStoreResponse
