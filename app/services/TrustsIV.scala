@@ -19,17 +19,15 @@ package services
 import com.google.inject.Inject
 import controllers.actions.TrustsAuthorisedFunctions
 import models.TrustAuthResponse
-import play.api.Logger
+import play.api.Logging
 import uk.gov.hmrc.auth.core.{BusinessKey, FailedRelationship, Relationship}
 import uk.gov.hmrc.http.HeaderCarrier
 import utils.Session
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class TrustsIV @Inject()(trustsAuth: TrustsAuthorisedFunctions) {
+class TrustsIV @Inject()(trustsAuth: TrustsAuthorisedFunctions) extends Logging {
 
-  private val logger: Logger = Logger(getClass)
-  
   def authenticate[A](utr: String,
                       onIVRelationshipExisting: Future[TrustAuthResponse],
                       onIVRelationshipNotExisting: Future[TrustAuthResponse]

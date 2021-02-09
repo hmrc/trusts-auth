@@ -18,7 +18,7 @@ package controllers.actions
 
 import com.google.inject.{ImplementedBy, Inject}
 import models.{AgentUser, IdentifierRequest, IndividualUser, OrganisationUser}
-import play.api.Logger
+import play.api.Logging
 import play.api.http.Status.UNAUTHORIZED
 import play.api.mvc.Results._
 import play.api.mvc._
@@ -38,10 +38,8 @@ class AuthenticatedIdentifierAction @Inject()(
                                                trustsAuthFunctions: TrustsAuthorisedFunctions,
                                                val parser: BodyParsers.Default
                                              )
-                                             (implicit val executionContext: ExecutionContext) extends IdentifierAction {
+                                             (implicit val executionContext: ExecutionContext) extends IdentifierAction with Logging {
 
-  private val logger: Logger = Logger(getClass)
-  
   override def invokeBlock[A](request: Request[A], block: IdentifierRequest[A] => Future[Result]): Future[Result] = {
 
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)

@@ -20,7 +20,7 @@ import com.google.inject.Inject
 import config.AppConfig
 import models.EnrolmentStoreResponse
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
