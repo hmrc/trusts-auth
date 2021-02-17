@@ -18,6 +18,7 @@ package connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import models.EnrolmentStoreResponse.{AlreadyClaimed, BadRequest, Forbidden, NotClaimed, ServiceUnavailable}
+import models.{URN, UTR}
 import org.scalatest.{AsyncFreeSpec, MustMatchers}
 import play.api.Application
 import play.api.http.Status
@@ -54,12 +55,12 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with MustMatchers with W
 
   private lazy val utrServiceName = "HMRC-TERS-ORG"
   private val utrIdentifierKey = "SAUTR"
-  private val utrIdentifier = "0987654321"
+  private val utrIdentifier = UTR("0987654321")
   private lazy val utrEnrolmentsUrl: String = s"/enrolment-store-proxy/enrolment-store/enrolments/$utrServiceName~$utrIdentifierKey~$utrIdentifier/users"
 
   private lazy val urnServiceName = "HMRC-TERSNT-ORG"
   private val urnIdentifierKey = "URN"
-  private val urnIdentifier = "XATRUST12345678"
+  private val urnIdentifier = URN("XATRUST12345678")
   private lazy val urnEnrolmentsUrl: String = s"/enrolment-store-proxy/enrolment-store/enrolments/$urnServiceName~$urnIdentifierKey~$urnIdentifier/users"
 
   private val principalId = Seq("ABCEDEFGI1234567")

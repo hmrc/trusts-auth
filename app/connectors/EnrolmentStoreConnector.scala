@@ -18,26 +18,26 @@ package connectors
 
 import com.google.inject.Inject
 import config.AppConfig
-import models.EnrolmentStoreResponse
+import models.{EnrolmentStoreResponse, TrustIdentifier, URN, UTR}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpClient
-import utils.Validation
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class EnrolmentStoreConnector @Inject()(http: HttpClient, config: AppConfig) {
 
-  private def enrolmentsEndpoint(identifier: String): String = {
-    if (Validation.validUtr(identifier)) {
-      val identifierKey = "SAUTR"
-      s"${config.enrolmentStoreProxyUrl}/enrolment-store-proxy/enrolment-store/enrolments/HMRC-TERS-ORG~$identifierKey~$identifier/users"
-    } else {
-      val identifierKey = "URN"
-      s"${config.enrolmentStoreProxyUrl}/enrolment-store-proxy/enrolment-store/enrolments/HMRC-TERSNT-ORG~$identifierKey~$identifier/users"
+  private def enrolmentsEndpoint(identifier: TrustIdentifier): String = {
+    identifier match {
+      case UTR(value) =>
+        val identifierKey = "SAUTR"
+        s"${config.enrolmentStoreProxyUrl}/enrolment-store-proxy/enrolment-store/enrolments/HMRC-TERS-ORG~$identifierKey~$identifier/users"
+      case URN(value) =>
+        val identifierKey = "URN"
+        s"${config.enrolmentStoreProxyUrl}/enrolment-store-proxy/enrolment-store/enrolments/HMRC-TERSNT-ORG~$identifierKey~$identifier/users"
     }
   }
 
-  def checkIfAlreadyClaimed(identifier: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[EnrolmentStoreResponse] = {
+  def checkIfAlreadyClaimed(identifier: TrustIdentifier)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[EnrolmentStoreResponse] = {
     http.GET[EnrolmentStoreResponse](enrolmentsEndpoint(identifier))(EnrolmentStoreResponse.httpReads, hc, ec)
   }
 }

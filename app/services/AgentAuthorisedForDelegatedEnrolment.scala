@@ -19,28 +19,29 @@ package services
 import com.google.inject.Inject
 import config.AppConfig
 import controllers.actions.TrustsAuthorisedFunctions
-import models.{TrustAuthAllowed, TrustAuthDenied, TrustAuthResponse}
+import models.{TrustAuthAllowed, TrustAuthDenied, TrustAuthResponse, TrustIdentifier, URN, UTR}
 import play.api.Logging
 import uk.gov.hmrc.auth.core.{Enrolment, InsufficientEnrolments}
 import uk.gov.hmrc.http.HeaderCarrier
-import utils.{Session, Validation}
+import utils.Session
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class AgentAuthorisedForDelegatedEnrolment @Inject()(trustsAuth: TrustsAuthorisedFunctions, config: AppConfig) extends Logging {
 
-  def authenticate[A](identifier: String)
+  def authenticate[A](identifier: TrustIdentifier)
                      (implicit hc: HeaderCarrier,
                       ec: ExecutionContext): Future[TrustAuthResponse] = {
 
-    val predicate = if (Validation.validUtr(identifier)) {
-      Enrolment("HMRC-TERS-ORG")
-        .withIdentifier("SAUTR", identifier)
-        .withDelegatedAuthRule("trust-auth")
-    } else {
-      Enrolment("HMRC-TERSNT-ORG")
-        .withIdentifier("URN", identifier)
-        .withDelegatedAuthRule("trust-auth")
+    val predicate = identifier match {
+      case UTR(value) =>
+        Enrolment("HMRC-TERS-ORG")
+          .withIdentifier("SAUTR", identifier.value)
+          .withDelegatedAuthRule("trust-auth")
+      case URN(value) =>
+        Enrolment("HMRC-TERSNT-ORG")
+          .withIdentifier("URN", identifier.value)
+          .withDelegatedAuthRule("trust-auth")
     }
 
     trustsAuth.authorised(predicate) {

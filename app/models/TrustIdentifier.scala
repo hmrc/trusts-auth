@@ -14,10 +14,17 @@
  * limitations under the License.
  */
 
-package utils
+package models
 
-object Validation {
-  val utrRegex = "^[0-9]{10}$".r.pattern
+sealed trait TrustIdentifier{
+  val value: String
+}
+final case class UTR(value: String) extends TrustIdentifier
+final case class URN(value: String) extends TrustIdentifier
 
-  def validUtr(identifier: String): Boolean = utrRegex.matcher(identifier).matches()
+object TrustIdentifier {
+  private val utrRegex = "^[0-9]{10}$".r.pattern
+
+  def apply(identifier: String): TrustIdentifier =
+    if (utrRegex.matcher(identifier).matches) UTR(identifier) else URN(identifier)
 }

@@ -20,7 +20,7 @@ import config.AppConfig
 import connectors.EnrolmentStoreConnector
 import controllers.actions.TrustsAuthorisedFunctions
 import models.EnrolmentStoreResponse.{AlreadyClaimed, NotClaimed, ServerError}
-import models.{TrustAuthAgentAllowed, TrustAuthAllowed, TrustAuthDenied, TrustAuthResponse}
+import models.{TrustAuthAgentAllowed, TrustAuthAllowed, TrustAuthDenied, TrustAuthResponse, URN, UTR}
 import org.mockito.Matchers.{any, eq => mEq}
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.ScalaFutures
@@ -87,7 +87,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
             when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
               .thenReturn(Future.successful(()))
 
-            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(utr))(any(), any()))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(any(), any()))
               .thenReturn(Future.successful(AlreadyClaimed))
 
             val app = applicationBuilder().build()
@@ -109,7 +109,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
             when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
               .thenReturn(authRetrievals(AffinityGroup.Agent, utrEnrolments))
 
-            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(utr))(any[HeaderCarrier], any[ExecutionContext]))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(any[HeaderCarrier], any[ExecutionContext]))
               .thenReturn(Future.successful(NotClaimed))
 
             val app = applicationBuilder().build()
@@ -142,7 +142,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
             when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
               .thenReturn(Future.failed(InsufficientEnrolments()))
 
-            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(utr))(any(), any()))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(any(), any()))
               .thenReturn(Future.successful(AlreadyClaimed))
 
             val app = applicationBuilder().build()
@@ -179,7 +179,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
               .thenReturn(Future.failed(InsufficientEnrolments()))
 
 
-            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(utr))(any(), any()))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(any(), any()))
               .thenReturn(Future.successful(AlreadyClaimed))
 
             val app = applicationBuilder().build()
@@ -260,7 +260,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
               when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
                 .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
-              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(utr))(any(), any()))
+              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(any(), any()))
                 .thenReturn(Future.successful(ServerError))
 
               val app = applicationBuilder().build()
@@ -281,7 +281,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
               when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
                 .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
-              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(utr))(any(), any()))
+              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(any(), any()))
                 .thenReturn(Future.successful(AlreadyClaimed))
 
               val app = applicationBuilder().build()
@@ -305,7 +305,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
               when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
                 .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
-              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(utr))(any(), any()))
+              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(any(), any()))
                 .thenReturn(Future.successful(NotClaimed))
 
               val app = applicationBuilder().build()
@@ -410,7 +410,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
             when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
               .thenReturn(Future.successful(()))
 
-            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(urn))(any(), any()))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(any(), any()))
               .thenReturn(Future.successful(AlreadyClaimed))
 
             val app = applicationBuilder().build()
@@ -432,7 +432,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
             when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
               .thenReturn(authRetrievals(AffinityGroup.Agent, urnEnrolments))
 
-            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(urn))(any[HeaderCarrier], any[ExecutionContext]))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(any[HeaderCarrier], any[ExecutionContext]))
               .thenReturn(Future.successful(NotClaimed))
 
             val app = applicationBuilder().build()
@@ -465,7 +465,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
             when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
               .thenReturn(Future.failed(InsufficientEnrolments()))
 
-            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(urn))(any(), any()))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(any(), any()))
               .thenReturn(Future.successful(AlreadyClaimed))
 
             val app = applicationBuilder().build()
@@ -502,7 +502,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
               .thenReturn(Future.failed(InsufficientEnrolments()))
 
 
-            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(urn))(any(), any()))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(any(), any()))
               .thenReturn(Future.successful(AlreadyClaimed))
 
             val app = applicationBuilder().build()
@@ -583,7 +583,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
               when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
                 .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
-              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(urn))(any(), any()))
+              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(any(), any()))
                 .thenReturn(Future.successful(ServerError))
 
               val app = applicationBuilder().build()
@@ -604,7 +604,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
               when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
                 .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
-              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(urn))(any(), any()))
+              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(any(), any()))
                 .thenReturn(Future.successful(AlreadyClaimed))
 
               val app = applicationBuilder().build()
@@ -628,7 +628,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
               when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
                 .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
-              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(urn))(any(), any()))
+              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(any(), any()))
                 .thenReturn(Future.successful(NotClaimed))
 
               val app = applicationBuilder().build()
