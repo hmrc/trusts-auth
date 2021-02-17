@@ -21,24 +21,23 @@ import config.AppConfig
 import models.EnrolmentStoreResponse
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpClient
+import utils.Validation
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class EnrolmentStoreConnector @Inject()(http: HttpClient, config: AppConfig) {
 
-  private def utrEnrolmentsEndpoint(identifier: String): String = {
-    val identifierKey = "SAUTR"
-    s"${config.enrolmentStoreProxyUrl}/enrolment-store-proxy/enrolment-store/enrolments/HMRC-TERS-ORG~$identifierKey~$identifier/users"
+  private def enrolmentsEndpoint(identifier: String): String = {
+    if (Validation.validUtr(identifier)) {
+      val identifierKey = "SAUTR"
+      s"${config.enrolmentStoreProxyUrl}/enrolment-store-proxy/enrolment-store/enrolments/HMRC-TERS-ORG~$identifierKey~$identifier/users"
+    } else {
+      val identifierKey = "URN"
+      s"${config.enrolmentStoreProxyUrl}/enrolment-store-proxy/enrolment-store/enrolments/HMRC-TERSNT-ORG~$identifierKey~$identifier/users"
+    }
   }
 
-  private def urnEnrolmentsEndpoint(identifier: String): String = {
-    val identifierKey = "URN"
-    s"${config.enrolmentStoreProxyUrl}/enrolment-store-proxy/enrolment-store/enrolments/HMRC-TERSNT-ORG~$identifierKey~$identifier/users"
+  def checkIfAlreadyClaimed(identifier: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[EnrolmentStoreResponse] = {
+    http.GET[EnrolmentStoreResponse](enrolmentsEndpoint(identifier))(EnrolmentStoreResponse.httpReads, hc, ec)
   }
-
-  def checkIfUtrAlreadyClaimed(utr: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[EnrolmentStoreResponse] =
-    http.GET[EnrolmentStoreResponse](utrEnrolmentsEndpoint(utr))(EnrolmentStoreResponse.httpReads, hc, ec)
-
-  def checkIfUrnAlreadyClaimed(urn: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[EnrolmentStoreResponse] =
-    http.GET[EnrolmentStoreResponse](urnEnrolmentsEndpoint(urn))(EnrolmentStoreResponse.httpReads, hc, ec)
 }

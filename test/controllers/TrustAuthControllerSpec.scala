@@ -60,7 +60,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
       .overrides(bind[TrustsAuthorisedFunctions].toInstance(trustsAuth))
       .overrides(bind[EnrolmentStoreConnector].toInstance(mockEnrolmentStoreConnector))
 
-  "authorisedForUtr" when {
+  "authorisedForIdentifier with a utr" when {
     val utr = "0987654321"
     val utrTrustsEnrolment = Enrolment("HMRC-TERS-ORG", List(EnrolmentIdentifier("SAUTR", utr)), "Activated", None)
     val utrEnrolments = Enrolments(Set(
@@ -87,12 +87,12 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
             when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
               .thenReturn(Future.successful(()))
 
-            when(mockEnrolmentStoreConnector.checkIfUtrAlreadyClaimed(mEq(utr))(any(), any()))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(utr))(any(), any()))
               .thenReturn(Future.successful(AlreadyClaimed))
 
             val app = applicationBuilder().build()
 
-            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
+            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
 
             val result = route(app, request).value
             status(result) mustBe OK
@@ -109,12 +109,12 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
             when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
               .thenReturn(authRetrievals(AffinityGroup.Agent, utrEnrolments))
 
-            when(mockEnrolmentStoreConnector.checkIfUtrAlreadyClaimed(mEq(utr))(any[HeaderCarrier], any[ExecutionContext]))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(utr))(any[HeaderCarrier], any[ExecutionContext]))
               .thenReturn(Future.successful(NotClaimed))
 
             val app = applicationBuilder().build()
 
-            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
+            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
 
             val result = route(app, request).value
             status(result) mustBe OK
@@ -142,12 +142,12 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
             when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
               .thenReturn(Future.failed(InsufficientEnrolments()))
 
-            when(mockEnrolmentStoreConnector.checkIfUtrAlreadyClaimed(mEq(utr))(any(), any()))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(utr))(any(), any()))
               .thenReturn(Future.successful(AlreadyClaimed))
 
             val app = applicationBuilder().build()
 
-            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
+            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
 
             val result = route(app, request).value
             status(result) mustBe OK
@@ -179,12 +179,12 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
               .thenReturn(Future.failed(InsufficientEnrolments()))
 
 
-            when(mockEnrolmentStoreConnector.checkIfUtrAlreadyClaimed(mEq(utr))(any(), any()))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(utr))(any(), any()))
               .thenReturn(Future.successful(AlreadyClaimed))
 
             val app = applicationBuilder().build()
 
-            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
+            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
 
             val result = route(app, request).value
             status(result) mustBe OK
@@ -214,7 +214,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
               val app = applicationBuilder().build()
 
-              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
+              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
 
               val result = route(app, request).value
               status(result) mustBe OK
@@ -239,7 +239,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
               val app = applicationBuilder().build()
 
-              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
+              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
 
               val result = route(app, request).value
               status(result) mustBe OK
@@ -260,12 +260,12 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
               when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
                 .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
-              when(mockEnrolmentStoreConnector.checkIfUtrAlreadyClaimed(mEq(utr))(any(), any()))
+              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(utr))(any(), any()))
                 .thenReturn(Future.successful(ServerError))
 
               val app = applicationBuilder().build()
 
-              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
+              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
 
               val result = route(app, request).value
               status(result) mustBe INTERNAL_SERVER_ERROR
@@ -281,12 +281,12 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
               when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
                 .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
-              when(mockEnrolmentStoreConnector.checkIfUtrAlreadyClaimed(mEq(utr))(any(), any()))
+              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(utr))(any(), any()))
                 .thenReturn(Future.successful(AlreadyClaimed))
 
               val app = applicationBuilder().build()
 
-              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
+              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
 
               val result = route(app, request).value
               status(result) mustBe OK
@@ -305,12 +305,12 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
               when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
                 .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
-              when(mockEnrolmentStoreConnector.checkIfUtrAlreadyClaimed(mEq(utr))(any(), any()))
+              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(utr))(any(), any()))
                 .thenReturn(Future.successful(NotClaimed))
 
               val app = applicationBuilder().build()
 
-              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
+              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
 
               val result = route(app, request).value
               status(result) mustBe OK
@@ -332,7 +332,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
         when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
           .thenReturn(Future failed BearerTokenExpired())
 
-        val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
+        val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
 
         val futuristicResult = route(app, request).value
         recoverToSucceededIf[BearerTokenExpired](futuristicResult)
@@ -382,7 +382,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
     }
   }
 
-  "authorisedForUrn" when {
+  "authorisedForIdentifier with a urn" when {
     val urn = "XATRUST12345678"
     val urnTrustsEnrolment = Enrolment("HMRC-TERSNT-ORG", List(EnrolmentIdentifier("URN", urn)), "Activated", None)
     val urnEnrolments = Enrolments(Set(
@@ -410,12 +410,12 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
             when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
               .thenReturn(Future.successful(()))
 
-            when(mockEnrolmentStoreConnector.checkIfUrnAlreadyClaimed(mEq(urn))(any(), any()))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(urn))(any(), any()))
               .thenReturn(Future.successful(AlreadyClaimed))
 
             val app = applicationBuilder().build()
 
-            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUrn(urn).url)
+            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)
 
             val result = route(app, request).value
             status(result) mustBe OK
@@ -432,12 +432,12 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
             when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
               .thenReturn(authRetrievals(AffinityGroup.Agent, urnEnrolments))
 
-            when(mockEnrolmentStoreConnector.checkIfUrnAlreadyClaimed(mEq(urn))(any[HeaderCarrier], any[ExecutionContext]))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(urn))(any[HeaderCarrier], any[ExecutionContext]))
               .thenReturn(Future.successful(NotClaimed))
 
             val app = applicationBuilder().build()
 
-            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUrn(urn).url)
+            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)
 
             val result = route(app, request).value
             status(result) mustBe OK
@@ -465,12 +465,12 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
             when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
               .thenReturn(Future.failed(InsufficientEnrolments()))
 
-            when(mockEnrolmentStoreConnector.checkIfUrnAlreadyClaimed(mEq(urn))(any(), any()))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(urn))(any(), any()))
               .thenReturn(Future.successful(AlreadyClaimed))
 
             val app = applicationBuilder().build()
 
-            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUrn(urn).url)
+            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)
 
             val result = route(app, request).value
             status(result) mustBe OK
@@ -502,12 +502,12 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
               .thenReturn(Future.failed(InsufficientEnrolments()))
 
 
-            when(mockEnrolmentStoreConnector.checkIfUrnAlreadyClaimed(mEq(urn))(any(), any()))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(urn))(any(), any()))
               .thenReturn(Future.successful(AlreadyClaimed))
 
             val app = applicationBuilder().build()
 
-            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUrn(urn).url)
+            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)
 
             val result = route(app, request).value
             status(result) mustBe OK
@@ -537,7 +537,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
               val app = applicationBuilder().build()
 
-              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUrn(urn).url)
+              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)
 
               val result = route(app, request).value
               status(result) mustBe OK
@@ -562,7 +562,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
               val app = applicationBuilder().build()
 
-              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUrn(urn).url)
+              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)
 
               val result = route(app, request).value
               status(result) mustBe OK
@@ -583,12 +583,12 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
               when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
                 .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
-              when(mockEnrolmentStoreConnector.checkIfUrnAlreadyClaimed(mEq(urn))(any(), any()))
+              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(urn))(any(), any()))
                 .thenReturn(Future.successful(ServerError))
 
               val app = applicationBuilder().build()
 
-              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUrn(urn).url)
+              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)
 
               val result = route(app, request).value
               status(result) mustBe INTERNAL_SERVER_ERROR
@@ -604,12 +604,12 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
               when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
                 .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
-              when(mockEnrolmentStoreConnector.checkIfUrnAlreadyClaimed(mEq(urn))(any(), any()))
+              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(urn))(any(), any()))
                 .thenReturn(Future.successful(AlreadyClaimed))
 
               val app = applicationBuilder().build()
 
-              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUrn(urn).url)
+              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)
 
               val result = route(app, request).value
               status(result) mustBe OK
@@ -628,12 +628,12 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
               when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
                 .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
-              when(mockEnrolmentStoreConnector.checkIfUrnAlreadyClaimed(mEq(urn))(any(), any()))
+              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(urn))(any(), any()))
                 .thenReturn(Future.successful(NotClaimed))
 
               val app = applicationBuilder().build()
 
-              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUrn(urn).url)
+              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)
 
               val result = route(app, request).value
               status(result) mustBe OK
@@ -655,7 +655,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
         when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
           .thenReturn(Future failed BearerTokenExpired())
 
-        val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUrn(urn).url)
+        val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)
 
         val futuristicResult = route(app, request).value
         recoverToSucceededIf[BearerTokenExpired](futuristicResult)

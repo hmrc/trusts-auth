@@ -1,5 +1,4 @@
 # microservice specific routes
 
-GET        /authorised/UTR/:utr     controllers.TrustAuthController.authorisedForUtr(utr: String)
-GET        /authorised/URN/:urn     controllers.TrustAuthController.authorisedForUrn(urn: String)
+GET        /authorised/:utr         controllers.TrustAuthController.authorisedForIdentifier(utr: String)
 GET        /agent-authorised        controllers.TrustAuthController.agentAuthorised()

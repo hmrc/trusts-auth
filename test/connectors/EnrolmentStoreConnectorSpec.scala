@@ -68,7 +68,7 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with MustMatchers with W
 
   "EnrolmentStoreConnector" - {
 
-    "checkIfUtrAlreadyClaimed" - {
+    "checkIfAlreadyClaimed" - {
       "No Content when" - {
         "No Content 204" in {
 
@@ -77,7 +77,7 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with MustMatchers with W
             expectedResponse = None
           )
 
-          connector.checkIfUtrAlreadyClaimed(utrIdentifier) map { result =>
+          connector.checkIfAlreadyClaimed(utrIdentifier) map { result =>
             result mustBe NotClaimed
           }
 
@@ -85,7 +85,7 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with MustMatchers with W
       }
 
       "Cannot access trust when" - {
-        "non-empty principalUserIds retrieved" in {
+        "non-empty principalUserIds retrieved using utr" in {
 
           wiremock(
             expectedStatus = Status.OK,
@@ -99,7 +99,27 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with MustMatchers with W
                  |}""".stripMargin
             ))
 
-          connector.checkIfUtrAlreadyClaimed(utrIdentifier) map { result =>
+          connector.checkIfAlreadyClaimed(utrIdentifier) map { result =>
+            result mustBe AlreadyClaimed
+          }
+
+        }
+
+        "non-empty principalUserIds retrieved using urn" in {
+
+          wiremock(
+            expectedStatus = Status.OK,
+            expectedResponse = Some(
+              s"""{
+                 |    "principalUserIds": [
+                 |       "${principalId.head}"
+                 |    ],
+                 |    "delegatedUserIds": [
+                 |    ]
+                 |}""".stripMargin
+            ))
+
+          connector.checkIfAlreadyClaimed(urnIdentifier) map { result =>
             result mustBe AlreadyClaimed
           }
 
@@ -119,7 +139,7 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with MustMatchers with W
                 |}""".stripMargin
             ))
 
-          connector.checkIfUtrAlreadyClaimed(utrIdentifier) map { result =>
+          connector.checkIfAlreadyClaimed(utrIdentifier) map { result =>
             result mustBe ServiceUnavailable
           }
 
@@ -139,7 +159,7 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with MustMatchers with W
                 |}""".stripMargin
             ))
 
-          connector.checkIfUtrAlreadyClaimed(utrIdentifier) map { result =>
+          connector.checkIfAlreadyClaimed(utrIdentifier) map { result =>
             result mustBe Forbidden
           }
 
@@ -159,106 +179,7 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with MustMatchers with W
                 |}""".stripMargin
             ))
 
-          connector.checkIfUtrAlreadyClaimed(utrIdentifier) map { result =>
-            result mustBe BadRequest
-          }
-
-        }
-      }
-    }
-
-    "checkIfUrnAlreadyClaimed" - {
-      "No Content when" - {
-        "No Content 204" in {
-
-          wiremock(
-            expectedStatus = Status.NO_CONTENT,
-            expectedResponse = None
-          )
-
-          connector.checkIfUrnAlreadyClaimed(urnIdentifier) map { result =>
-            result mustBe NotClaimed
-          }
-
-        }
-      }
-
-      "Cannot access trust when" - {
-        "non-empty principalUserIds retrieved" in {
-
-          wiremock(
-            expectedStatus = Status.OK,
-            expectedResponse = Some(
-              s"""{
-                 |    "principalUserIds": [
-                 |       "${principalId.head}"
-                 |    ],
-                 |    "delegatedUserIds": [
-                 |    ]
-                 |}""".stripMargin
-            ))
-
-          connector.checkIfUrnAlreadyClaimed(urnIdentifier) map { result =>
-            result mustBe AlreadyClaimed
-          }
-
-        }
-      }
-
-      "Service Unavailable when" - {
-        "Service Unavailable 503" in {
-
-          wiremock(
-            expectedStatus = Status.SERVICE_UNAVAILABLE,
-            expectedResponse = Some(
-              """
-                |{
-                |   "errorCode": "SERVICE_UNAVAILABLE",
-                |   "message": "Service temporarily unavailable"
-                |}""".stripMargin
-            ))
-
-          connector.checkIfUrnAlreadyClaimed(urnIdentifier) map { result =>
-            result mustBe ServiceUnavailable
-          }
-
-        }
-      }
-
-      "Forbidden when" - {
-        "Forbidden 403" in {
-
-          wiremock(
-            expectedStatus = Status.FORBIDDEN,
-            expectedResponse = Some(
-              """
-                |{
-                |   "errorCode": "CREDENTIAL_CANNOT_PERFORM_ADMIN_ACTION",
-                |   "message": "The User credentials are valid but the user does not have permission to perform the requested function"
-                |}""".stripMargin
-            ))
-
-          connector.checkIfUrnAlreadyClaimed(urnIdentifier) map { result =>
-            result mustBe Forbidden
-          }
-
-        }
-      }
-
-      "Invalid service when" - {
-        "Bad Request 400" in {
-
-          wiremock(
-            expectedStatus = Status.BAD_REQUEST,
-            expectedResponse = Some(
-              """
-                |{
-                |   "errorCode": "INVALID_SERVICE",
-                |   "message": "The provided service does not exist"
-                |}""".stripMargin
-            ))
-
-          connector.checkIfUrnAlreadyClaimed(urnIdentifier) map { result =>
+          connector.checkIfAlreadyClaimed(utrIdentifier) map { result =>
             result mustBe BadRequest
           }
 

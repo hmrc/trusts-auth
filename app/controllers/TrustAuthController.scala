@@ -31,7 +31,7 @@ import uk.gov.hmrc.auth.core.{EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import utils.Session
+import utils.{Session, Validation}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -44,33 +44,20 @@ class TrustAuthController @Inject()(cc: ControllerComponents,
                                     delegatedEnrolment: AgentAuthorisedForDelegatedEnrolment
                                )(implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
 
-  def authorisedForUtr(utr: String): Action[AnyContent] = identifierAction.async {
+  def authorisedForIdentifier(identifier: String): Action[AnyContent] = identifierAction.async {
     implicit request =>
       implicit val hc : HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
 
       mapResult(request.user.affinityGroup match {
         case Agent =>
-          checkIfAgentAuthorised(utr, enrolmentStoreConnector.checkIfUtrAlreadyClaimed, delegatedEnrolment.authenticateUtr)
+          checkIfAgentAuthorised(identifier)
         case Organisation =>
-          checkIfTrustIsClaimedAndTrustIV(utr, checkForTrustEnrolmentForUTR(utr), enrolmentStoreConnector.checkIfUtrAlreadyClaimed)
+          checkIfTrustIsClaimedAndTrustIV(identifier)
         case _ =>
           Future.successful(TrustAuthDenied(config.unauthorisedUrl))
       })
   }
 
-  def authorisedForUrn(urn: String): Action[AnyContent] = identifierAction.async {
-    implicit request =>
-      implicit val hc : HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
-
-      mapResult(request.user.affinityGroup match {
-        case Agent =>
-          checkIfAgentAuthorised(urn, enrolmentStoreConnector.checkIfUrnAlreadyClaimed, delegatedEnrolment.authenticateUrn)
-        case Organisation =>
-          checkIfTrustIsClaimedAndTrustIV(urn, checkForTrustEnrolmentForURN(urn), enrolmentStoreConnector.checkIfUrnAlreadyClaimed)
-        case _ =>
-          Future.successful(TrustAuthDenied(config.unauthorisedUrl))
-      })
-  }
 
   def agentAuthorised(): Action[AnyContent] = identifierAction.async {
     implicit request =>
@@ -108,8 +95,11 @@ class TrustAuthController @Inject()(cc: ControllerComponents,
       .flatMap(_.identifiers.find(_.key equals "AgentReferenceNumber"))
       .collect { case EnrolmentIdentifier(_, value) => value }
 
-  private def checkIfTrustIsClaimedAndTrustIV[A](identifier: String, userEnrolled: Boolean, isAlreadyClaimed: String => Future[EnrolmentStoreResponse])
-                                                (implicit hc: HeaderCarrier): Future[TrustAuthResponse] = {
+
+  private def checkIfTrustIsClaimedAndTrustIV[A](identifier: String)
+                                                (implicit request: IdentifierRequest[A], hc: HeaderCarrier): Future[TrustAuthResponse] = {
+
+    val userEnrolled = checkForTrustEnrolmentForIdentifier(identifier)
 
     logger.info(s"[checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
       s" authenticating user for $identifier")
@@ -132,7 +122,7 @@ class TrustAuthController @Inject()(cc: ControllerComponents,
         }
       )
     } else {
-      isAlreadyClaimed(identifier) flatMap {
+      enrolmentStoreConnector.checkIfAlreadyClaimed(identifier) flatMap {
         case AlreadyClaimed =>
           logger.info(s"[checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
             s" user is not enrolled for $identifier and the trust is already claimed")
@@ -150,35 +140,33 @@ class TrustAuthController @Inject()(cc: ControllerComponents,
     }
   }
 
-  private def checkIfAgentAuthorised[A](identifier: String,
-                                        isAlreadyClaimed: String => Future[EnrolmentStoreResponse],
-                                        authenticate: String => Future[TrustAuthResponse])
-                                       (implicit hc: HeaderCarrier): Future[TrustAuthResponse] = {
+  private def checkIfAgentAuthorised[A](identifier: String)(implicit hc: HeaderCarrier): Future[TrustAuthResponse] = {
 
     logger.info(s"[checkIfAgentAuthorised][Session ID: ${Session.id(hc)}] authenticating agent for $identifier")
 
-    isAlreadyClaimed(identifier) flatMap {
+    enrolmentStoreConnector.checkIfAlreadyClaimed(identifier) flatMap {
       case NotClaimed =>
         logger.info(s"[checkIfAgentAuthorised][Session ID: ${Session.id(hc)}] agent not authenticated for $identifier, trust is not claimed")
         Future.successful(TrustAuthDenied(config.trustNotClaimedUrl))
       case AlreadyClaimed =>
         logger.info(s"[checkIfAgentAuthorised][Session ID: ${Session.id(hc)}] $identifier is claimed, checking if agent is authorised")
-        authenticate(identifier)
+        delegatedEnrolment.authenticate(identifier)
       case _ =>
         logger.info(s"[checkIfAgentAuthorised][Session ID: ${Session.id(hc)}] unable to determine if $identifier is already claimed")
         Future.successful(TrustAuthInternalServerError)
     }
   }
 
-  private def checkForTrustEnrolmentForUTR[A](utr: String)(implicit request: IdentifierRequest[A]): Boolean =
-    request.user.enrolments.enrolments
-      .find(_.key equals "HMRC-TERS-ORG")
-      .flatMap(_.identifiers.find(_.key equals "SAUTR"))
-      .exists(_.value equals utr)
-
-  private def checkForTrustEnrolmentForURN[A](urn: String)(implicit request: IdentifierRequest[A]): Boolean =
-    request.user.enrolments.enrolments
-      .find(_.key equals "HMRC-TERSNT-ORG")
-      .flatMap(_.identifiers.find(_.key equals "URN"))
-      .exists(_.value equals urn)
+  private def checkForTrustEnrolmentForIdentifier[A](identifier: String)(implicit request: IdentifierRequest[A]): Boolean = {
+    if (Validation.validUtr(identifier))
+      request.user.enrolments.enrolments
+        .find(_.key equals "HMRC-TERS-ORG")
+        .flatMap(_.identifiers.find(_.key equals "SAUTR"))
+        .exists(_.value equals identifier)
+    else
+      request.user.enrolments.enrolments
+        .find(_.key equals "HMRC-TERSNT-ORG")
+        .flatMap(_.identifiers.find(_.key equals "URN"))
+        .exists(_.value equals identifier)
+  }
 }
