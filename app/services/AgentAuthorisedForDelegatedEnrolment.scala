@@ -29,12 +29,33 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class AgentAuthorisedForDelegatedEnrolment @Inject()(trustsAuth: TrustsAuthorisedFunctions, config: AppConfig) extends Logging {
 
-  def authenticate[A](utr: String)
-                     (implicit hc: HeaderCarrier,
+  def authenticateUtr[A](utr: String)
+                        (implicit hc: HeaderCarrier,
                       ec: ExecutionContext): Future[TrustAuthResponse] = {
 
     val predicate = Enrolment("HMRC-TERS-ORG")
       .withIdentifier("SAUTR", utr)
+      .withDelegatedAuthRule("trust-auth")
+
+    trustsAuth.authorised(predicate) {
+      logger.info(s"[Session ID: ${Session.id(hc)}] agent is authorised for delegated enrolment for $utr")
+      Future.successful(TrustAuthAllowed())
+    } recover {
+      case _ : InsufficientEnrolments =>
+        logger.info(s"[Session ID: ${Session.id(hc)}] agent is not authorised for delegated enrolment for $utr")
+        TrustAuthDenied(config.agentNotAuthorisedUrl)
+      case _ =>
+        logger.info(s"[Session ID: ${Session.id(hc)}] agent is not authorised for $utr")
+        TrustAuthDenied(config.unauthorisedUrl)
+    }
+  }
+
+  def authenticateUrn[A](utr: String)
+                        (implicit hc: HeaderCarrier,
+                         ec: ExecutionContext): Future[TrustAuthResponse] = {
+
+    val predicate = Enrolment("HMRC-TERSNT-ORG")
+      .withIdentifier("URN", utr)
       .withDelegatedAuthRule("trust-auth")
 
     trustsAuth.authorised(predicate) {
