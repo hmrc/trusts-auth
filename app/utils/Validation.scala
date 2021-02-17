@@ -16,10 +16,8 @@
 
 package utils
 
-trait Validation {
+object Validation {
+  val utrRegex = "^[0-9]{10}$".r.pattern
 
-  val utrRegex = """^[0-9]{10}$"""
-  val validUtr: String => Boolean = (utr: String) => utr.matches(utrRegex)
+  def validUtr(identifier: String): Boolean = utrRegex.matcher(identifier).matches()
 }
-
-object Validation extends Validation
