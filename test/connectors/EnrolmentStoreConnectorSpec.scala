@@ -40,8 +40,8 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with MustMatchers with W
         .withStatus(expectedStatus)
     }
 
-    server.stubFor(get(urlEqualTo(enrolmentsUrl)).willReturn(response))
-
+    server.stubFor(get(urlEqualTo(utrEnrolmentsUrl)).willReturn(response))
+    server.stubFor(get(urlEqualTo(urnEnrolmentsUrl)).willReturn(response))
   }
 
   lazy val app: Application = new GuiceApplicationBuilder()
@@ -52,114 +52,219 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with MustMatchers with W
 
   private lazy val connector = app.injector.instanceOf[EnrolmentStoreConnector]
 
-  private lazy val serviceName = "HMRC-TERS-ORG"
+  private lazy val utrServiceName = "HMRC-TERS-ORG"
+  private val utrIdentifierKey = "SAUTR"
+  private val utrIdentifier = "0987654321"
+  private lazy val utrEnrolmentsUrl: String = s"/enrolment-store-proxy/enrolment-store/enrolments/$utrServiceName~$utrIdentifierKey~$utrIdentifier/users"
 
-  private val identifierKey = "SAUTR"
-  private val identifier = "0987654321"
+  private lazy val urnServiceName = "HMRC-TERSNT-ORG"
+  private val urnIdentifierKey = "URN"
+  private val urnIdentifier = "XATRUST12345678"
+  private lazy val urnEnrolmentsUrl: String = s"/enrolment-store-proxy/enrolment-store/enrolments/$urnServiceName~$urnIdentifierKey~$urnIdentifier/users"
 
   private val principalId = Seq("ABCEDEFGI1234567")
 
-  private lazy val enrolmentsUrl: String = s"/enrolment-store-proxy/enrolment-store/enrolments/$serviceName~$identifierKey~$identifier/users"
+
 
   "EnrolmentStoreConnector" - {
 
-    "No Content when" - {
-      "No Content 204" in {
+    "checkIfUtrAlreadyClaimed" - {
+      "No Content when" - {
+        "No Content 204" in {
 
-        wiremock(
-          expectedStatus = Status.NO_CONTENT,
-          expectedResponse = None
-        )
+          wiremock(
+            expectedStatus = Status.NO_CONTENT,
+            expectedResponse = None
+          )
 
-        connector.checkIfAlreadyClaimed(identifier) map { result =>
-          result mustBe NotClaimed
+          connector.checkIfUtrAlreadyClaimed(utrIdentifier) map { result =>
+            result mustBe NotClaimed
+          }
+
         }
+      }
 
+      "Cannot access trust when" - {
+        "non-empty principalUserIds retrieved" in {
+
+          wiremock(
+            expectedStatus = Status.OK,
+            expectedResponse = Some(
+              s"""{
+                 |    "principalUserIds": [
+                 |       "${principalId.head}"
+                 |    ],
+                 |    "delegatedUserIds": [
+                 |    ]
+                 |}""".stripMargin
+            ))
+
+          connector.checkIfUtrAlreadyClaimed(utrIdentifier) map { result =>
+            result mustBe AlreadyClaimed
+          }
+
+        }
+      }
+
+      "Service Unavailable when" - {
+        "Service Unavailable 503" in {
+
+          wiremock(
+            expectedStatus = Status.SERVICE_UNAVAILABLE,
+            expectedResponse = Some(
+              """
+                |{
+                |   "errorCode": "SERVICE_UNAVAILABLE",
+                |   "message": "Service temporarily unavailable"
+                |}""".stripMargin
+            ))
+
+          connector.checkIfUtrAlreadyClaimed(utrIdentifier) map { result =>
+            result mustBe ServiceUnavailable
+          }
+
+        }
+      }
+
+      "Forbidden when" - {
+        "Forbidden 403" in {
+
+          wiremock(
+            expectedStatus = Status.FORBIDDEN,
+            expectedResponse = Some(
+              """
+                |{
+                |   "errorCode": "CREDENTIAL_CANNOT_PERFORM_ADMIN_ACTION",
+                |   "message": "The User credentials are valid but the user does not have permission to perform the requested function"
+                |}""".stripMargin
+            ))
+
+          connector.checkIfUtrAlreadyClaimed(utrIdentifier) map { result =>
+            result mustBe Forbidden
+          }
+
+        }
+      }
+
+      "Invalid service when" - {
+        "Bad Request 400" in {
+
+          wiremock(
+            expectedStatus = Status.BAD_REQUEST,
+            expectedResponse = Some(
+              """
+                |{
+                |   "errorCode": "INVALID_SERVICE",
+                |   "message": "The provided service does not exist"
+                |}""".stripMargin
+            ))
+
+          connector.checkIfUtrAlreadyClaimed(utrIdentifier) map { result =>
+            result mustBe BadRequest
+          }
+
+        }
       }
     }
 
-    "Cannot access trust when" - {
-      "non-empty principalUserIds retrieved" in {
+    "checkIfUrnAlreadyClaimed" - {
+      "No Content when" - {
+        "No Content 204" in {
 
-        wiremock(
-          expectedStatus = Status.OK,
-          expectedResponse = Some(
-            s"""{
-               |    "principalUserIds": [
-               |       "${principalId.head}"
-               |    ],
-               |    "delegatedUserIds": [
-               |    ]
-               |}""".stripMargin
-          ))
+          wiremock(
+            expectedStatus = Status.NO_CONTENT,
+            expectedResponse = None
+          )
 
-        connector.checkIfAlreadyClaimed(identifier) map { result =>
-          result mustBe AlreadyClaimed
+          connector.checkIfUrnAlreadyClaimed(urnIdentifier) map { result =>
+            result mustBe NotClaimed
+          }
+
         }
+      }
 
+      "Cannot access trust when" - {
+        "non-empty principalUserIds retrieved" in {
+
+          wiremock(
+            expectedStatus = Status.OK,
+            expectedResponse = Some(
+              s"""{
+                 |    "principalUserIds": [
+                 |       "${principalId.head}"
+                 |    ],
+                 |    "delegatedUserIds": [
+                 |    ]
+                 |}""".stripMargin
+            ))
+
+          connector.checkIfUrnAlreadyClaimed(urnIdentifier) map { result =>
+            result mustBe AlreadyClaimed
+          }
+
+        }
+      }
+
+      "Service Unavailable when" - {
+        "Service Unavailable 503" in {
+
+          wiremock(
+            expectedStatus = Status.SERVICE_UNAVAILABLE,
+            expectedResponse = Some(
+              """
+                |{
+                |   "errorCode": "SERVICE_UNAVAILABLE",
+                |   "message": "Service temporarily unavailable"
+                |}""".stripMargin
+            ))
+
+          connector.checkIfUrnAlreadyClaimed(urnIdentifier) map { result =>
+            result mustBe ServiceUnavailable
+          }
+
+        }
+      }
+
+      "Forbidden when" - {
+        "Forbidden 403" in {
+
+          wiremock(
+            expectedStatus = Status.FORBIDDEN,
+            expectedResponse = Some(
+              """
+                |{
+                |   "errorCode": "CREDENTIAL_CANNOT_PERFORM_ADMIN_ACTION",
+                |   "message": "The User credentials are valid but the user does not have permission to perform the requested function"
+                |}""".stripMargin
+            ))
+
+          connector.checkIfUrnAlreadyClaimed(urnIdentifier) map { result =>
+            result mustBe Forbidden
+          }
+
+        }
+      }
+
+      "Invalid service when" - {
+        "Bad Request 400" in {
+
+          wiremock(
+            expectedStatus = Status.BAD_REQUEST,
+            expectedResponse = Some(
+              """
+                |{
+                |   "errorCode": "INVALID_SERVICE",
+                |   "message": "The provided service does not exist"
+                |}""".stripMargin
+            ))
+
+          connector.checkIfUrnAlreadyClaimed(urnIdentifier) map { result =>
+            result mustBe BadRequest
+          }
+
+        }
       }
     }
-
-    "Service Unavailable when" - {
-      "Service Unavailable 503" in {
-
-        wiremock(
-          expectedStatus = Status.SERVICE_UNAVAILABLE,
-          expectedResponse = Some(
-            """
-              |{
-              |   "errorCode": "SERVICE_UNAVAILABLE",
-              |   "message": "Service temporarily unavailable"
-              |}""".stripMargin
-          ))
-
-        connector.checkIfAlreadyClaimed(identifier) map { result =>
-          result mustBe ServiceUnavailable
-        }
-
-      }
-    }
-
-    "Forbidden when" - {
-      "Forbidden 403" in {
-
-        wiremock(
-          expectedStatus = Status.FORBIDDEN,
-          expectedResponse = Some(
-            """
-              |{
-              |   "errorCode": "CREDENTIAL_CANNOT_PERFORM_ADMIN_ACTION",
-              |   "message": "The User credentials are valid but the user does not have permission to perform the requested function"
-              |}""".stripMargin
-          ))
-
-        connector.checkIfAlreadyClaimed(identifier) map { result =>
-          result mustBe Forbidden
-        }
-
-      }
-    }
-
-    "Invalid service when" - {
-      "Bad Request 400" in {
-
-        wiremock(
-          expectedStatus = Status.BAD_REQUEST,
-          expectedResponse = Some(
-            """
-              |{
-              |   "errorCode": "INVALID_SERVICE",
-              |   "message": "The provided service does not exist"
-              |}""".stripMargin
-          ))
-
-        connector.checkIfAlreadyClaimed(identifier) map { result =>
-          result mustBe BadRequest
-        }
-
-      }
-    }
-
   }
 
 }

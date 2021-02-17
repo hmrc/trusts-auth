@@ -26,12 +26,19 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class EnrolmentStoreConnector @Inject()(http: HttpClient, config: AppConfig) {
 
-  private def enrolmentsEndpoint(identifier: String): String = {
+  private def utrEnrolmentsEndpoint(identifier: String): String = {
     val identifierKey = "SAUTR"
     s"${config.enrolmentStoreProxyUrl}/enrolment-store-proxy/enrolment-store/enrolments/HMRC-TERS-ORG~$identifierKey~$identifier/users"
   }
 
-  def checkIfAlreadyClaimed(utr: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[EnrolmentStoreResponse] =
-    http.GET[EnrolmentStoreResponse](enrolmentsEndpoint(utr))(EnrolmentStoreResponse.httpReads, hc, ec)
+  private def urnEnrolmentsEndpoint(identifier: String): String = {
+    val identifierKey = "URN"
+    s"${config.enrolmentStoreProxyUrl}/enrolment-store-proxy/enrolment-store/enrolments/HMRC-TERSNT-ORG~$identifierKey~$identifier/users"
+  }
 
+  def checkIfUtrAlreadyClaimed(utr: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[EnrolmentStoreResponse] =
+    http.GET[EnrolmentStoreResponse](utrEnrolmentsEndpoint(utr))(EnrolmentStoreResponse.httpReads, hc, ec)
+
+  def checkIfUrnAlreadyClaimed(urn: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[EnrolmentStoreResponse] =
+    http.GET[EnrolmentStoreResponse](urnEnrolmentsEndpoint(urn))(EnrolmentStoreResponse.httpReads, hc, ec)
 }

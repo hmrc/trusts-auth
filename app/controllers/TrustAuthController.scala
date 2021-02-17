@@ -121,7 +121,7 @@ class TrustAuthController @Inject()(cc: ControllerComponents,
         }
       )
     } else {
-      enrolmentStoreConnector.checkIfAlreadyClaimed(utr) flatMap {
+      enrolmentStoreConnector.checkIfUtrAlreadyClaimed(utr) flatMap {
         case AlreadyClaimed =>
           logger.info(s"[checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
             s" user is not enrolled for $utr and the trust is already claimed")
@@ -144,7 +144,7 @@ class TrustAuthController @Inject()(cc: ControllerComponents,
 
     logger.info(s"[checkIfAgentAuthorised][Session ID: ${Session.id(hc)}] authenticating agent for $utr")
 
-    enrolmentStoreConnector.checkIfAlreadyClaimed(utr) flatMap {
+    enrolmentStoreConnector.checkIfUtrAlreadyClaimed(utr) flatMap {
       case NotClaimed =>
         logger.info(s"[checkIfAgentAuthorised][Session ID: ${Session.id(hc)}] agent not authenticated for $utr, trust is not claimed")
         Future.successful(TrustAuthDenied(config.trustNotClaimedUrl))
