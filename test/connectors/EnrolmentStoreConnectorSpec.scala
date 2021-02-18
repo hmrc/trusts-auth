@@ -56,12 +56,14 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with MustMatchers with W
   private lazy val utrServiceName = "HMRC-TERS-ORG"
   private val utrIdentifierKey = "SAUTR"
   private val utrIdentifier = UTR("0987654321")
-  private lazy val utrEnrolmentsUrl: String = s"/enrolment-store-proxy/enrolment-store/enrolments/$utrServiceName~$utrIdentifierKey~$utrIdentifier/users"
+  private lazy val utrEnrolmentsUrl: String = s"/enrolment-store-proxy/enrolment-store/enrolments/" +
+    s"$utrServiceName~$utrIdentifierKey~${utrIdentifier.value}/users"
 
   private lazy val urnServiceName = "HMRC-TERSNT-ORG"
   private val urnIdentifierKey = "URN"
   private val urnIdentifier = URN("XATRUST12345678")
-  private lazy val urnEnrolmentsUrl: String = s"/enrolment-store-proxy/enrolment-store/enrolments/$urnServiceName~$urnIdentifierKey~$urnIdentifier/users"
+  private lazy val urnEnrolmentsUrl: String = s"/enrolment-store-proxy/enrolment-store/enrolments/" +
+    s"$urnServiceName~$urnIdentifierKey~${urnIdentifier.value}/users"
 
   private val principalId = Seq("ABCEDEFGI1234567")
 

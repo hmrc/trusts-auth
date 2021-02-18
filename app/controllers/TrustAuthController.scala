@@ -102,22 +102,22 @@ class TrustAuthController @Inject()(cc: ControllerComponents,
     val userEnrolled = checkForTrustEnrolmentForIdentifier(identifier)
 
     logger.info(s"[checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
-      s" authenticating user for $identifier")
+      s" authenticating user for ${identifier.value}")
 
     if (userEnrolled) {
       logger.info(s"[checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
-        s" user is enrolled for $identifier")
+        s" user is enrolled for ${identifier.value}")
 
       trustsIV.authenticate(
         utr = identifier.value,
         onIVRelationshipExisting = {
           logger.info(s"[checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
-            s" user has an IV session for $identifier")
+            s" user has an IV session for ${identifier.value}")
           Future.successful(TrustAuthAllowed())
         },
         onIVRelationshipNotExisting = {
           logger.info(s"[checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
-            s" user does not have an IV session for $identifier")
+            s" user does not have an IV session for ${identifier.value}")
           Future.successful(TrustAuthDenied(config.maintainThisTrust))
         }
       )
@@ -125,16 +125,16 @@ class TrustAuthController @Inject()(cc: ControllerComponents,
       enrolmentStoreConnector.checkIfAlreadyClaimed(identifier) flatMap {
         case AlreadyClaimed =>
           logger.info(s"[checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
-            s" user is not enrolled for $identifier and the trust is already claimed")
+            s" user is not enrolled for ${identifier.value} and the trust is already claimed")
           Future.successful(TrustAuthDenied(config.alreadyClaimedUrl))
 
         case NotClaimed =>
           logger.info(s"[checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
-            s" user is not enrolled for $identifier and the trust is not claimed")
+            s" user is not enrolled for ${identifier.value} and the trust is not claimed")
           Future.successful(TrustAuthDenied(config.claimATrustUrl(identifier.value)))
         case _ =>
           logger.info(s"[checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
-            s" unable to determine if $identifier is already claimed")
+            s" unable to determine if ${identifier.value} is already claimed")
           Future.successful(TrustAuthInternalServerError)
       }
     }
@@ -142,7 +142,7 @@ class TrustAuthController @Inject()(cc: ControllerComponents,
 
   private def checkIfAgentAuthorised[A](identifier: TrustIdentifier)(implicit hc: HeaderCarrier): Future[TrustAuthResponse] = {
 
-    logger.info(s"[checkIfAgentAuthorised][Session ID: ${Session.id(hc)}] authenticating agent for $identifier")
+    logger.info(s"[checkIfAgentAuthorised][Session ID: ${Session.id(hc)}] authenticating agent for ${identifier.value}")
 
     enrolmentStoreConnector.checkIfAlreadyClaimed(identifier) flatMap {
       case NotClaimed =>
