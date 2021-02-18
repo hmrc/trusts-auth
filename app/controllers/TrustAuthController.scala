@@ -161,13 +161,13 @@ class TrustAuthController @Inject()(cc: ControllerComponents,
     identifier match {
       case UTR(value) =>
         request.user.enrolments.enrolments
-          .find(_.key equals "HMRC-TERS-ORG")
-          .flatMap(_.identifiers.find(_.key equals "SAUTR"))
+          .find(_.key equals config.TAXABLE_ENROLMENT)
+          .flatMap(_.identifiers.find(_.key equals config.TAXABLE_ENROLMENT_ID))
           .exists(_.value equals value)
       case URN(value) =>
         request.user.enrolments.enrolments
-          .find(_.key equals "HMRC-TERSNT-ORG")
-          .flatMap(_.identifiers.find(_.key equals "URN"))
+          .find(_.key equals config.NONE_TAXABLE_ENROLMENT)
+          .flatMap(_.identifiers.find(_.key equals config.NONE_TAXABLE_ENROLMENT_ID))
           .exists(_.value equals value)
     }
   }

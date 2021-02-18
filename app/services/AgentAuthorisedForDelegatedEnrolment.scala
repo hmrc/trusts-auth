@@ -35,12 +35,12 @@ class AgentAuthorisedForDelegatedEnrolment @Inject()(trustsAuth: TrustsAuthorise
 
     val predicate = identifier match {
       case UTR(value) =>
-        Enrolment("HMRC-TERS-ORG")
-          .withIdentifier("SAUTR", identifier.value)
+        Enrolment(config.TAXABLE_ENROLMENT)
+          .withIdentifier(config.TAXABLE_ENROLMENT_ID, identifier.value)
           .withDelegatedAuthRule("trust-auth")
       case URN(value) =>
-        Enrolment("HMRC-TERSNT-ORG")
-          .withIdentifier("URN", identifier.value)
+        Enrolment(config.NONE_TAXABLE_ENROLMENT)
+          .withIdentifier(config.NONE_TAXABLE_ENROLMENT_ID, identifier.value)
           .withDelegatedAuthRule("trust-auth")
     }
 

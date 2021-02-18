@@ -22,6 +22,11 @@ import play.api.Configuration
 @Singleton
 class AppConfig @Inject()(config: Configuration) {
 
+  val TAXABLE_ENROLMENT = "HMRC-TERS-ORG"
+  val TAXABLE_ENROLMENT_ID = "SAUTR"
+  val NONE_TAXABLE_ENROLMENT = "HMRC-TERSNT-ORG"
+  val NONE_TAXABLE_ENROLMENT_ID = "URN"
+
   val authBaseUrl: String = config.get[Service]("microservice.services.auth").baseUrl
 
   val auditingEnabled: Boolean = config.get[Boolean]("auditing.enabled")

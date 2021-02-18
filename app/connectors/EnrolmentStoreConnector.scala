@@ -29,11 +29,11 @@ class EnrolmentStoreConnector @Inject()(http: HttpClient, config: AppConfig) {
   private def enrolmentsEndpoint(identifier: TrustIdentifier): String = {
     identifier match {
       case UTR(value) =>
-        val identifierKey = "SAUTR"
-        s"${config.enrolmentStoreProxyUrl}/enrolment-store-proxy/enrolment-store/enrolments/HMRC-TERS-ORG~$identifierKey~$identifier/users"
+        s"${config.enrolmentStoreProxyUrl}/enrolment-store-proxy/enrolment-store/enrolments/" +
+          s"${config.TAXABLE_ENROLMENT}~${config.TAXABLE_ENROLMENT_ID}~$identifier/users"
       case URN(value) =>
-        val identifierKey = "URN"
-        s"${config.enrolmentStoreProxyUrl}/enrolment-store-proxy/enrolment-store/enrolments/HMRC-TERSNT-ORG~$identifierKey~$identifier/users"
+        s"${config.enrolmentStoreProxyUrl}/enrolment-store-proxy/enrolment-store/enrolments/" +
+          s"${config.NONE_TAXABLE_ENROLMENT}~${config.NONE_TAXABLE_ENROLMENT_ID}~$identifier/users"
     }
   }
 
