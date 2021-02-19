@@ -19,7 +19,7 @@ package services
 import com.google.inject.Inject
 import config.AppConfig
 import controllers.actions.TrustsAuthorisedFunctions
-import models.{TrustAuthAllowed, TrustAuthDenied, TrustAuthResponse}
+import models.{TrustAuthAllowed, TrustAuthDenied, TrustAuthResponse, TrustIdentifier, URN, UTR}
 import play.api.Logging
 import uk.gov.hmrc.auth.core.{Enrolment, InsufficientEnrolments}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -29,23 +29,30 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class AgentAuthorisedForDelegatedEnrolment @Inject()(trustsAuth: TrustsAuthorisedFunctions, config: AppConfig) extends Logging {
 
-  def authenticate[A](utr: String)
+  def authenticate[A](identifier: TrustIdentifier)
                      (implicit hc: HeaderCarrier,
                       ec: ExecutionContext): Future[TrustAuthResponse] = {
 
-    val predicate = Enrolment("HMRC-TERS-ORG")
-      .withIdentifier("SAUTR", utr)
-      .withDelegatedAuthRule("trust-auth")
+    val predicate = identifier match {
+      case UTR(value) =>
+        Enrolment(config.TAXABLE_ENROLMENT)
+          .withIdentifier(config.TAXABLE_ENROLMENT_ID, identifier.value)
+          .withDelegatedAuthRule("trust-auth")
+      case URN(value) =>
+        Enrolment(config.NONE_TAXABLE_ENROLMENT)
+          .withIdentifier(config.NONE_TAXABLE_ENROLMENT_ID, identifier.value)
+          .withDelegatedAuthRule("trust-auth")
+    }
 
     trustsAuth.authorised(predicate) {
-      logger.info(s"[Session ID: ${Session.id(hc)}] agent is authorised for delegated enrolment for $utr")
+      logger.info(s"[Session ID: ${Session.id(hc)}] agent is authorised for delegated enrolment for ${identifier.value}")
       Future.successful(TrustAuthAllowed())
     } recover {
       case _ : InsufficientEnrolments =>
-        logger.info(s"[Session ID: ${Session.id(hc)}] agent is not authorised for delegated enrolment for $utr")
+        logger.info(s"[Session ID: ${Session.id(hc)}] agent is not authorised for delegated enrolment for ${identifier.value}")
         TrustAuthDenied(config.agentNotAuthorisedUrl)
       case _ =>
-        logger.info(s"[Session ID: ${Session.id(hc)}] agent is not authorised for $utr")
+        logger.info(s"[Session ID: ${Session.id(hc)}] agent is not authorised for ${identifier.value}")
         TrustAuthDenied(config.unauthorisedUrl)
     }
   }

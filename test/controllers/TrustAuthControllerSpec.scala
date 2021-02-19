@@ -20,7 +20,7 @@ import config.AppConfig
 import connectors.EnrolmentStoreConnector
 import controllers.actions.TrustsAuthorisedFunctions
 import models.EnrolmentStoreResponse.{AlreadyClaimed, NotClaimed, ServerError}
-import models.{TrustAuthAgentAllowed, TrustAuthAllowed, TrustAuthDenied, TrustAuthResponse}
+import models.{TrustAuthAgentAllowed, TrustAuthAllowed, TrustAuthDenied, TrustAuthResponse, URN, UTR}
 import org.mockito.Matchers.{any, eq => mEq}
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.ScalaFutures
@@ -41,17 +41,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with MockitoSugar with ScalaFutures with EitherValues with RecoverMethods {
 
-  private val utr = "0987654321"
 
   private val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
-
   private val agentEnrolment = Enrolment("HMRC-AS-AGENT", List(EnrolmentIdentifier("AgentReferenceNumber", "SomeARN")), "Activated", None)
-  private val trustsEnrolment = Enrolment("HMRC-TERS-ORG", List(EnrolmentIdentifier("SAUTR", utr)), "Activated", None)
-
-  private val enrolments = Enrolments(Set(
-    agentEnrolment,
-    trustsEnrolment
-  ))
 
   private val mockAuthConnector: AuthConnector = mock[AuthConnector]
   private val mockEnrolmentStoreConnector: EnrolmentStoreConnector = mock[EnrolmentStoreConnector]
@@ -68,179 +60,39 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
       .overrides(bind[TrustsAuthorisedFunctions].toInstance(trustsAuth))
       .overrides(bind[EnrolmentStoreConnector].toInstance(mockEnrolmentStoreConnector))
 
-  "invoking the TrustAuthController" when {
+  "authorisedForIdentifier with a utr" when {
+    val utr = "0987654321"
+    val utrTrustsEnrolment = Enrolment("HMRC-TERS-ORG", List(EnrolmentIdentifier("SAUTR", utr)), "Activated", None)
+    val utrEnrolments = Enrolments(Set(
+      agentEnrolment,
+      utrTrustsEnrolment
+    ))
+    "invoking the TrustAuthController" when {
 
-    "authenticating an agent" when {
+      "authenticating an agent" when {
 
-      "trust is claimed and agent is authorised" must {
-
-        "return OK" in {
-
-          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
-            .thenReturn(authRetrievals(AffinityGroup.Agent, enrolments))
-
-          val predicatedMatcher = mEq(
-            Enrolment("HMRC-TERS-ORG")
-              .withIdentifier("SAUTR", utr)
-              .withDelegatedAuthRule("trust-auth")
-          )
-
-          when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
-            .thenReturn(Future.successful(()))
-
-          when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(utr))(any(), any()))
-            .thenReturn(Future.successful(AlreadyClaimed))
-
-          val app = applicationBuilder().build()
-
-          val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
-
-          val result = route(app, request).value
-          status(result) mustBe OK
-
-          val response = contentAsJson(result).as[TrustAuthResponse]
-          response mustBe TrustAuthAllowed()
-        }
-      }
-
-      "trust has not been claimed by a trustee" must {
-
-        "redirect to trust not claimed page" in  {
-
-          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
-            .thenReturn(authRetrievals(AffinityGroup.Agent, enrolments))
-
-          when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(utr))(any[HeaderCarrier], any[ExecutionContext]))
-            .thenReturn(Future.successful(NotClaimed))
-
-          val app = applicationBuilder().build()
-
-          val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
-
-          val result = route(app, request).value
-          status(result) mustBe OK
-
-          val response = contentAsJson(result).as[TrustAuthResponse]
-          response mustBe TrustAuthDenied(appConfig.trustNotClaimedUrl)
-        }
-      }
-
-      "agent has not been authorised for any trusts" must {
-
-        "redirect to agent not authorised" in {
-
-          val enrolments = Enrolments(Set(agentEnrolment))
-
-          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
-            .thenReturn(authRetrievals(AffinityGroup.Agent, enrolments))
-
-          val predicatedMatcher = mEq(
-            Enrolment("HMRC-TERS-ORG")
-              .withIdentifier("SAUTR", utr)
-              .withDelegatedAuthRule("trust-auth")
-          )
-
-          when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
-            .thenReturn(Future.failed(InsufficientEnrolments()))
-
-          when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(utr))(any(), any()))
-            .thenReturn(Future.successful(AlreadyClaimed))
-
-          val app = applicationBuilder().build()
-
-          val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
-
-          val result = route(app, request).value
-          status(result) mustBe OK
-
-          val response = contentAsJson(result).as[TrustAuthResponse]
-          response mustBe TrustAuthDenied(appConfig.agentNotAuthorisedUrl)
-        }
-      }
-
-      "an agent that has a trusts enrolment without matching submitted utr" must {
-
-        "redirect to agent not authorised" in {
-
-          val enrolments = Enrolments(Set(
-            agentEnrolment,
-            Enrolment("HMRC-TERS-ORG", List(EnrolmentIdentifier("SAUTR", "1234567890")), "Activated", None)
-          ))
-
-          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
-            .thenReturn(authRetrievals(AffinityGroup.Agent, enrolments))
-
-          val predicatedMatcher = mEq(
-            Enrolment("HMRC-TERS-ORG")
-              .withIdentifier("SAUTR", utr)
-              .withDelegatedAuthRule("trust-auth")
-          )
-
-          when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
-            .thenReturn(Future.failed(InsufficientEnrolments()))
-
-
-          when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(utr))(any(), any()))
-            .thenReturn(Future.successful(AlreadyClaimed))
-
-          val app = applicationBuilder().build()
-
-          val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
-
-          val result = route(app, request).value
-          status(result) mustBe OK
-
-          val response = contentAsJson(result).as[TrustAuthResponse]
-          response mustBe TrustAuthDenied(appConfig.agentNotAuthorisedUrl)
-        }
-      }
-
-    }
-
-    "authenticating an organisation user" when {
-
-      "organisation user has an enrolment for the trust" when {
-
-        "relationship does not exist in Trust IV" must {
-
-          "redirect to trust IV for a non claiming check" in {
-
-            val enrolments = Enrolments(Set(trustsEnrolment))
-
-            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
-              .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
-
-            when(mockAuthConnector.authorise(any[Relationship], mEq(EmptyRetrieval))(any(), any()))
-              .thenReturn(Future.failed(FailedRelationship()))
-
-            val app = applicationBuilder().build()
-
-            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
-
-            val result = route(app, request).value
-            status(result) mustBe OK
-
-            val response = contentAsJson(result).as[TrustAuthDenied]
-            response.redirectUrl must include("/maintain-this-trust")
-          }
-
-        }
-
-        "relationship does exist in Trust IV" must {
+        "trust is claimed and agent is authorised" must {
 
           "return OK" in {
 
-            val enrolments = Enrolments(Set(trustsEnrolment))
-
             when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
-              .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
+              .thenReturn(authRetrievals(AffinityGroup.Agent, utrEnrolments))
 
-            when(mockAuthConnector.authorise(any[Relationship], mEq(EmptyRetrieval))(any(), any()))
+            val predicatedMatcher = mEq(
+              Enrolment("HMRC-TERS-ORG")
+                .withIdentifier("SAUTR", utr)
+                .withDelegatedAuthRule("trust-auth")
+            )
+
+            when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
               .thenReturn(Future.successful(()))
+
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(any(), any()))
+              .thenReturn(Future.successful(AlreadyClaimed))
 
             val app = applicationBuilder().build()
 
-            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
+            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
 
             val result = route(app, request).value
             status(result) mustBe OK
@@ -249,135 +101,606 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
             response mustBe TrustAuthAllowed()
           }
         }
-      }
 
-      "organisation user has no enrolment for the trust" when {
+        "trust has not been claimed by a trustee" must {
 
-        "unable to determine if the UTR belongs to a different org account" must {
-
-          "redirect to tech difficulties" in {
-            val enrolments = Enrolments(Set())
+          "redirect to trust not claimed page" in  {
 
             when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
-              .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
+              .thenReturn(authRetrievals(AffinityGroup.Agent, utrEnrolments))
 
-            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(utr))(any(), any()))
-              .thenReturn(Future.successful(ServerError))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(any[HeaderCarrier], any[ExecutionContext]))
+              .thenReturn(Future.successful(NotClaimed))
 
             val app = applicationBuilder().build()
 
-            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
-
-            val result = route(app, request).value
-            status(result) mustBe INTERNAL_SERVER_ERROR
-          }
-        }
-
-        "utr is already claimed by a different org account" must {
-
-          "redirect to already claimed" in {
-
-            val enrolments = Enrolments(Set())
-
-            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
-              .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
-
-            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(utr))(any(), any()))
-              .thenReturn(Future.successful(AlreadyClaimed))
-
-            val app = applicationBuilder().build()
-
-            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
+            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
 
             val result = route(app, request).value
             status(result) mustBe OK
 
             val response = contentAsJson(result).as[TrustAuthResponse]
-            response mustBe TrustAuthDenied(appConfig.alreadyClaimedUrl)
+            response mustBe TrustAuthDenied(appConfig.trustNotClaimedUrl)
           }
         }
 
-        "utr is not already claimed by an org account" must {
+        "agent has not been authorised for any trusts" must {
 
-          "redirect to claim a trust" in {
+          "redirect to agent not authorised" in {
 
-            val enrolments = Enrolments(Set())
+            val enrolments = Enrolments(Set(agentEnrolment))
 
             when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
-              .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
+              .thenReturn(authRetrievals(AffinityGroup.Agent, enrolments))
 
-            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(utr))(any(), any()))
-              .thenReturn(Future.successful(NotClaimed))
+            val predicatedMatcher = mEq(
+              Enrolment("HMRC-TERS-ORG")
+                .withIdentifier("SAUTR", utr)
+                .withDelegatedAuthRule("trust-auth")
+            )
+
+            when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
+              .thenReturn(Future.failed(InsufficientEnrolments()))
+
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(any(), any()))
+              .thenReturn(Future.successful(AlreadyClaimed))
 
             val app = applicationBuilder().build()
 
-            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
+            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
 
             val result = route(app, request).value
             status(result) mustBe OK
 
-            val response = contentAsJson(result).as[TrustAuthDenied]
-            response.redirectUrl must include("/claim-a-trust")
+            val response = contentAsJson(result).as[TrustAuthResponse]
+            response mustBe TrustAuthDenied(appConfig.agentNotAuthorisedUrl)
           }
+        }
+
+        "an agent that has a trusts enrolment without matching submitted utr" must {
+
+          "redirect to agent not authorised" in {
+
+            val enrolments = Enrolments(Set(
+              agentEnrolment,
+              Enrolment("HMRC-TERS-ORG", List(EnrolmentIdentifier("SAUTR", "1234567890")), "Activated", None)
+            ))
+
+            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+              .thenReturn(authRetrievals(AffinityGroup.Agent, enrolments))
+
+            val predicatedMatcher = mEq(
+              Enrolment("HMRC-TERS-ORG")
+                .withIdentifier("SAUTR", utr)
+                .withDelegatedAuthRule("trust-auth")
+            )
+
+            when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
+              .thenReturn(Future.failed(InsufficientEnrolments()))
+
+
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(any(), any()))
+              .thenReturn(Future.successful(AlreadyClaimed))
+
+            val app = applicationBuilder().build()
+
+            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
+
+            val result = route(app, request).value
+            status(result) mustBe OK
+
+            val response = contentAsJson(result).as[TrustAuthResponse]
+            response mustBe TrustAuthDenied(appConfig.agentNotAuthorisedUrl)
+          }
+        }
+
+      }
+
+      "authenticating an organisation user" when {
+
+        "organisation user has an enrolment for the trust" when {
+
+          "relationship does not exist in Trust IV" must {
+
+            "redirect to trust IV for a non claiming check" in {
+
+              val enrolments = Enrolments(Set(utrTrustsEnrolment))
+
+              when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+                .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
+
+              when(mockAuthConnector.authorise(any[Relationship], mEq(EmptyRetrieval))(any(), any()))
+                .thenReturn(Future.failed(FailedRelationship()))
+
+              val app = applicationBuilder().build()
+
+              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
+
+              val result = route(app, request).value
+              status(result) mustBe OK
+
+              val response = contentAsJson(result).as[TrustAuthDenied]
+              response.redirectUrl must include("/maintain-this-trust")
+            }
+
+          }
+
+          "relationship does exist in Trust IV" must {
+
+            "return OK" in {
+
+              val enrolments = Enrolments(Set(utrTrustsEnrolment))
+
+              when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+                .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
+
+              when(mockAuthConnector.authorise(any[Relationship], mEq(EmptyRetrieval))(any(), any()))
+                .thenReturn(Future.successful(()))
+
+              val app = applicationBuilder().build()
+
+              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
+
+              val result = route(app, request).value
+              status(result) mustBe OK
+
+              val response = contentAsJson(result).as[TrustAuthResponse]
+              response mustBe TrustAuthAllowed()
+            }
+          }
+        }
+
+        "organisation user has no enrolment for the trust" when {
+
+          "unable to determine if the UTR belongs to a different org account" must {
+
+            "redirect to tech difficulties" in {
+              val enrolments = Enrolments(Set())
+
+              when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+                .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
+
+              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(any(), any()))
+                .thenReturn(Future.successful(ServerError))
+
+              val app = applicationBuilder().build()
+
+              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
+
+              val result = route(app, request).value
+              status(result) mustBe INTERNAL_SERVER_ERROR
+            }
+          }
+
+          "utr is already claimed by a different org account" must {
+
+            "redirect to already claimed" in {
+
+              val enrolments = Enrolments(Set())
+
+              when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+                .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
+
+              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(any(), any()))
+                .thenReturn(Future.successful(AlreadyClaimed))
+
+              val app = applicationBuilder().build()
+
+              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
+
+              val result = route(app, request).value
+              status(result) mustBe OK
+
+              val response = contentAsJson(result).as[TrustAuthResponse]
+              response mustBe TrustAuthDenied(appConfig.alreadyClaimedUrl)
+            }
+          }
+
+          "utr is not already claimed by an org account" must {
+
+            "redirect to claim a trust" in {
+
+              val enrolments = Enrolments(Set())
+
+              when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+                .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
+
+              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(any(), any()))
+                .thenReturn(Future.successful(NotClaimed))
+
+              val app = applicationBuilder().build()
+
+              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
+
+              val result = route(app, request).value
+              status(result) mustBe OK
+
+              val response = contentAsJson(result).as[TrustAuthDenied]
+              response.redirectUrl must include("/claim-a-trust")
+            }
+          }
+        }
+      }
+    }
+
+    "passing a non authenticated request" must {
+
+      "redirect to the login page" in {
+
+        val app = applicationBuilder().build()
+
+        when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+          .thenReturn(Future failed BearerTokenExpired())
+
+        val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
+
+        val futuristicResult = route(app, request).value
+        recoverToSucceededIf[BearerTokenExpired](futuristicResult)
+      }
+    }
+
+    "invoking authenticate" when {
+
+      "an Agent user hasn't enrolled an Agent Services Account" must {
+
+        "redirect the user to the create agent services page" in {
+
+          val noEnrollment = Enrolments(Set())
+
+          val app = applicationBuilder().build()
+
+          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+            .thenReturn(authRetrievals(AffinityGroup.Agent, noEnrollment))
+
+          val request = FakeRequest(GET, controllers.routes.TrustAuthController.agentAuthorised().url)
+          val result = route(app, request).value
+
+          status(result) mustBe OK
+
+          val response = contentAsJson(result).as[TrustAuthResponse]
+          response mustBe TrustAuthDenied(appConfig.createAgentServicesAccountUrl)
+        }
+      }
+      "Agent user has correct enrolled in Agent Services Account" must {
+        "allow authentication" in {
+          val agentEnrolments = Enrolments(Set(agentEnrolment))
+
+          val app = applicationBuilder().build()
+
+          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+            .thenReturn(authRetrievals(AffinityGroup.Agent, agentEnrolments))
+
+          val request = FakeRequest(GET, controllers.routes.TrustAuthController.agentAuthorised().url)
+          val result = route(app, request).value
+
+          status(result) mustBe OK
+
+          val response = contentAsJson(result).as[TrustAuthResponse]
+          response mustBe TrustAuthAgentAllowed("SomeARN")
         }
       }
     }
   }
 
-  "passing a non authenticated request" must {
+  "authorisedForIdentifier with a urn" when {
+    val urn = "XATRUST12345678"
+    val urnTrustsEnrolment = Enrolment("HMRC-TERSNT-ORG", List(EnrolmentIdentifier("URN", urn)), "Activated", None)
+    val urnEnrolments = Enrolments(Set(
+      agentEnrolment,
+      urnTrustsEnrolment
+    ))
 
-    "redirect to the login page" in {
+    "invoking the TrustAuthController" when {
 
-      val app = applicationBuilder().build()
+      "authenticating an agent" when {
 
-      when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
-        .thenReturn(Future failed BearerTokenExpired())
+        "trust is claimed and agent is authorised" must {
 
-      val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForUtr(utr).url)
+          "return OK" in {
 
-      val futuristicResult = route(app, request).value
-      recoverToSucceededIf[BearerTokenExpired](futuristicResult)
-    }
-  }
+            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+              .thenReturn(authRetrievals(AffinityGroup.Agent, urnEnrolments))
 
-  "invoking authenticate" when {
+            val predicatedMatcher = mEq(
+              Enrolment("HMRC-TERSNT-ORG")
+                .withIdentifier("URN", urn)
+                .withDelegatedAuthRule("trust-auth")
+            )
 
-    "an Agent user hasn't enrolled an Agent Services Account" must {
+            when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
+              .thenReturn(Future.successful(()))
 
-      "redirect the user to the create agent services page" in {
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(any(), any()))
+              .thenReturn(Future.successful(AlreadyClaimed))
 
-        val noEnrollment = Enrolments(Set())
+            val app = applicationBuilder().build()
 
-        val app = applicationBuilder().build()
+            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)
 
-        when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
-          .thenReturn(authRetrievals(AffinityGroup.Agent, noEnrollment))
+            val result = route(app, request).value
+            status(result) mustBe OK
 
-        val request = FakeRequest(GET, controllers.routes.TrustAuthController.agentAuthorised().url)
-        val result = route(app, request).value
+            val response = contentAsJson(result).as[TrustAuthResponse]
+            response mustBe TrustAuthAllowed()
+          }
+        }
 
-        status(result) mustBe OK
+        "trust has not been claimed by a trustee" must {
 
-        val response = contentAsJson(result).as[TrustAuthResponse]
-        response mustBe TrustAuthDenied(appConfig.createAgentServicesAccountUrl)
+          "redirect to trust not claimed page" in  {
+
+            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+              .thenReturn(authRetrievals(AffinityGroup.Agent, urnEnrolments))
+
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(any[HeaderCarrier], any[ExecutionContext]))
+              .thenReturn(Future.successful(NotClaimed))
+
+            val app = applicationBuilder().build()
+
+            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)
+
+            val result = route(app, request).value
+            status(result) mustBe OK
+
+            val response = contentAsJson(result).as[TrustAuthResponse]
+            response mustBe TrustAuthDenied(appConfig.trustNotClaimedUrl)
+          }
+        }
+
+        "agent has not been authorised for any trusts" must {
+
+          "redirect to agent not authorised" in {
+
+            val enrolments = Enrolments(Set(agentEnrolment))
+
+            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+              .thenReturn(authRetrievals(AffinityGroup.Agent, enrolments))
+
+            val predicatedMatcher = mEq(
+              Enrolment("HMRC-TERSNT-ORG")
+                .withIdentifier("URN", urn)
+                .withDelegatedAuthRule("trust-auth")
+            )
+
+            when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
+              .thenReturn(Future.failed(InsufficientEnrolments()))
+
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(any(), any()))
+              .thenReturn(Future.successful(AlreadyClaimed))
+
+            val app = applicationBuilder().build()
+
+            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)
+
+            val result = route(app, request).value
+            status(result) mustBe OK
+
+            val response = contentAsJson(result).as[TrustAuthResponse]
+            response mustBe TrustAuthDenied(appConfig.agentNotAuthorisedUrl)
+          }
+        }
+
+        "an agent that has a trusts enrolment without matching submitted urn" must {
+
+          "redirect to agent not authorised" in {
+
+            val enrolments = Enrolments(Set(
+              agentEnrolment,
+              Enrolment("HMRC-TERSNT-ORG", List(EnrolmentIdentifier("URN", "1234567890")), "Activated", None)
+            ))
+
+            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+              .thenReturn(authRetrievals(AffinityGroup.Agent, enrolments))
+
+            val predicatedMatcher = mEq(
+              Enrolment("HMRC-TERSNT-ORG")
+                .withIdentifier("URN", urn)
+                .withDelegatedAuthRule("trust-auth")
+            )
+
+            when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
+              .thenReturn(Future.failed(InsufficientEnrolments()))
+
+
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(any(), any()))
+              .thenReturn(Future.successful(AlreadyClaimed))
+
+            val app = applicationBuilder().build()
+
+            val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)
+
+            val result = route(app, request).value
+            status(result) mustBe OK
+
+            val response = contentAsJson(result).as[TrustAuthResponse]
+            response mustBe TrustAuthDenied(appConfig.agentNotAuthorisedUrl)
+          }
+        }
+
+      }
+
+      "authenticating an organisation user" when {
+
+        "organisation user has an enrolment for the trust" when {
+
+          "relationship does not exist in Trust IV" must {
+
+            "redirect to trust IV for a non claiming check" in {
+
+              val enrolments = Enrolments(Set(urnTrustsEnrolment))
+
+              when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+                .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
+
+              when(mockAuthConnector.authorise(any[Relationship], mEq(EmptyRetrieval))(any(), any()))
+                .thenReturn(Future.failed(FailedRelationship()))
+
+              val app = applicationBuilder().build()
+
+              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)
+
+              val result = route(app, request).value
+              status(result) mustBe OK
+
+              val response = contentAsJson(result).as[TrustAuthDenied]
+              response.redirectUrl must include("/maintain-this-trust")
+            }
+
+          }
+
+          "relationship does exist in Trust IV" must {
+
+            "return OK" in {
+
+              val enrolments = Enrolments(Set(urnTrustsEnrolment))
+
+              when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+                .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
+
+              when(mockAuthConnector.authorise(any[Relationship], mEq(EmptyRetrieval))(any(), any()))
+                .thenReturn(Future.successful(()))
+
+              val app = applicationBuilder().build()
+
+              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)
+
+              val result = route(app, request).value
+              status(result) mustBe OK
+
+              val response = contentAsJson(result).as[TrustAuthResponse]
+              response mustBe TrustAuthAllowed()
+            }
+          }
+        }
+
+        "organisation user has no enrolment for the trust" when {
+
+          "unable to determine if the urn belongs to a different org account" must {
+
+            "redirect to tech difficulties" in {
+              val enrolments = Enrolments(Set())
+
+              when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+                .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
+
+              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(any(), any()))
+                .thenReturn(Future.successful(ServerError))
+
+              val app = applicationBuilder().build()
+
+              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)
+
+              val result = route(app, request).value
+              status(result) mustBe INTERNAL_SERVER_ERROR
+            }
+          }
+
+          "urn is already claimed by a different org account" must {
+
+            "redirect to already claimed" in {
+
+              val enrolments = Enrolments(Set())
+
+              when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+                .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
+
+              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(any(), any()))
+                .thenReturn(Future.successful(AlreadyClaimed))
+
+              val app = applicationBuilder().build()
+
+              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)
+
+              val result = route(app, request).value
+              status(result) mustBe OK
+
+              val response = contentAsJson(result).as[TrustAuthResponse]
+              response mustBe TrustAuthDenied(appConfig.alreadyClaimedUrl)
+            }
+          }
+
+          "urn is not already claimed by an org account" must {
+
+            "redirect to claim a trust" in {
+
+              val enrolments = Enrolments(Set())
+
+              when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+                .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
+
+              when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(any(), any()))
+                .thenReturn(Future.successful(NotClaimed))
+
+              val app = applicationBuilder().build()
+
+              val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)
+
+              val result = route(app, request).value
+              status(result) mustBe OK
+
+              val response = contentAsJson(result).as[TrustAuthDenied]
+              response.redirectUrl must include("/claim-a-trust")
+            }
+          }
+        }
       }
     }
-    "Agent user has correct enrolled in Agent Services Account" must {
-      "allow authentication" in {
-        val agentEnrolments = Enrolments(Set(agentEnrolment))
+
+    "passing a non authenticated request" must {
+
+      "redirect to the login page" in {
 
         val app = applicationBuilder().build()
 
         when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
-          .thenReturn(authRetrievals(AffinityGroup.Agent, agentEnrolments))
+          .thenReturn(Future failed BearerTokenExpired())
 
-        val request = FakeRequest(GET, controllers.routes.TrustAuthController.agentAuthorised().url)
-        val result = route(app, request).value
+        val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)
 
-        status(result) mustBe OK
+        val futuristicResult = route(app, request).value
+        recoverToSucceededIf[BearerTokenExpired](futuristicResult)
+      }
+    }
 
-        val response = contentAsJson(result).as[TrustAuthResponse]
-        response mustBe TrustAuthAgentAllowed("SomeARN")
+    "invoking authenticate" when {
+
+      "an Agent user hasn't enrolled an Agent Services Account" must {
+
+        "redirect the user to the create agent services page" in {
+
+          val noEnrollment = Enrolments(Set())
+
+          val app = applicationBuilder().build()
+
+          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+            .thenReturn(authRetrievals(AffinityGroup.Agent, noEnrollment))
+
+          val request = FakeRequest(GET, controllers.routes.TrustAuthController.agentAuthorised().url)
+          val result = route(app, request).value
+
+          status(result) mustBe OK
+
+          val response = contentAsJson(result).as[TrustAuthResponse]
+          response mustBe TrustAuthDenied(appConfig.createAgentServicesAccountUrl)
+        }
+      }
+      "Agent user has correct enrolled in Agent Services Account" must {
+        "allow authentication" in {
+          val agentEnrolments = Enrolments(Set(agentEnrolment))
+
+          val app = applicationBuilder().build()
+
+          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+            .thenReturn(authRetrievals(AffinityGroup.Agent, agentEnrolments))
+
+          val request = FakeRequest(GET, controllers.routes.TrustAuthController.agentAuthorised().url)
+          val result = route(app, request).value
+
+          status(result) mustBe OK
+
+          val response = contentAsJson(result).as[TrustAuthResponse]
+          response mustBe TrustAuthAgentAllowed("SomeARN")
+        }
       }
     }
   }
