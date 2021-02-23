@@ -17,6 +17,7 @@
 package connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import models.EnrolmentStoreResponse.{AlreadyClaimed, BadRequest, Forbidden, NotClaimed, ServiceUnavailable}
 import models.{URN, UTR}
 import org.scalatest.{AsyncFreeSpec, MustMatchers}
@@ -30,7 +31,7 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with MustMatchers with W
 
   implicit lazy val hc: HeaderCarrier = HeaderCarrier()
 
-  private def wiremock(expectedStatus: Int, expectedResponse: Option[String]) = {
+  private def wiremock(expectedStatus: Int, expectedResponse: Option[String]): StubMapping = {
 
     val response = expectedResponse map { response =>
       aResponse()
@@ -67,8 +68,6 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with MustMatchers with W
 
   private val principalId = Seq("ABCEDEFGI1234567")
 
-
-
   "EnrolmentStoreConnector" - {
 
     "checkIfAlreadyClaimed" - {
@@ -81,6 +80,7 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with MustMatchers with W
           )
 
           connector.checkIfAlreadyClaimed(utrIdentifier) map { result =>
+            server.verify(getRequestedFor(urlEqualTo(utrEnrolmentsUrl)))
             result mustBe NotClaimed
           }
 
@@ -103,6 +103,7 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with MustMatchers with W
             ))
 
           connector.checkIfAlreadyClaimed(utrIdentifier) map { result =>
+            server.verify(getRequestedFor(urlEqualTo(utrEnrolmentsUrl)))
             result mustBe AlreadyClaimed
           }
 
@@ -123,6 +124,7 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with MustMatchers with W
             ))
 
           connector.checkIfAlreadyClaimed(urnIdentifier) map { result =>
+            server.verify(getRequestedFor(urlEqualTo(urnEnrolmentsUrl)))
             result mustBe AlreadyClaimed
           }
 
@@ -143,6 +145,7 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with MustMatchers with W
             ))
 
           connector.checkIfAlreadyClaimed(utrIdentifier) map { result =>
+            server.verify(getRequestedFor(urlEqualTo(utrEnrolmentsUrl)))
             result mustBe ServiceUnavailable
           }
 
@@ -163,6 +166,7 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with MustMatchers with W
             ))
 
           connector.checkIfAlreadyClaimed(utrIdentifier) map { result =>
+            server.verify(getRequestedFor(urlEqualTo(utrEnrolmentsUrl)))
             result mustBe Forbidden
           }
 
@@ -183,6 +187,7 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with MustMatchers with W
             ))
 
           connector.checkIfAlreadyClaimed(utrIdentifier) map { result =>
+            server.verify(getRequestedFor(urlEqualTo(utrEnrolmentsUrl)))
             result mustBe BadRequest
           }
 

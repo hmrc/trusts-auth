@@ -42,7 +42,7 @@ class TrustAuthController @Inject()(cc: ControllerComponents,
                                     config: AppConfig,
                                     trustsIV: TrustsIV,
                                     delegatedEnrolment: AgentAuthorisedForDelegatedEnrolment
-                               )(implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
+                                   )(implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
 
   def authorisedForIdentifier(identifier: String): Action[AnyContent] = identifierAction.async {
     implicit request =>
@@ -58,7 +58,6 @@ class TrustAuthController @Inject()(cc: ControllerComponents,
       })
   }
 
-
   def agentAuthorised(): Action[AnyContent] = identifierAction.async {
     implicit request =>
       implicit val hc : HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
@@ -73,7 +72,7 @@ class TrustAuthController @Inject()(cc: ControllerComponents,
       })
   }
 
-  private def mapResult(result: Future[Object]) = result map {
+  private def mapResult(result: Future[Object]): Future[Result] = result map {
     case TrustAuthInternalServerError => InternalServerError
     case r: TrustAuthResponse => Ok(Json.toJson(r))
   }
@@ -89,7 +88,7 @@ class TrustAuthController @Inject()(cc: ControllerComponents,
     }
   }
 
-  private def getAgentReferenceNumber(enrolments: Enrolments) =
+  private def getAgentReferenceNumber(enrolments: Enrolments): Option[String] =
     enrolments.enrolments
       .find(_.key equals "HMRC-AS-AGENT")
       .flatMap(_.identifiers.find(_.key equals "AgentReferenceNumber"))
@@ -166,8 +165,8 @@ class TrustAuthController @Inject()(cc: ControllerComponents,
           .exists(_.value equals value)
       case URN(value) =>
         request.user.enrolments.enrolments
-          .find(_.key equals config.NONE_TAXABLE_ENROLMENT)
-          .flatMap(_.identifiers.find(_.key equals config.NONE_TAXABLE_ENROLMENT_ID))
+          .find(_.key equals config.NON_TAXABLE_ENROLMENT)
+          .flatMap(_.identifiers.find(_.key equals config.NON_TAXABLE_ENROLMENT_ID))
           .exists(_.value equals value)
     }
   }
