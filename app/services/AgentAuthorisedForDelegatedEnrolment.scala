@@ -39,8 +39,8 @@ class AgentAuthorisedForDelegatedEnrolment @Inject()(trustsAuth: TrustsAuthorise
           .withIdentifier(config.TAXABLE_ENROLMENT_ID, identifier.value)
           .withDelegatedAuthRule("trust-auth")
       case URN(value) =>
-        Enrolment(config.NONE_TAXABLE_ENROLMENT)
-          .withIdentifier(config.NONE_TAXABLE_ENROLMENT_ID, identifier.value)
+        Enrolment(config.NON_TAXABLE_ENROLMENT)
+          .withIdentifier(config.NON_TAXABLE_ENROLMENT_ID, identifier.value)
           .withDelegatedAuthRule("trust-auth")
     }
 
