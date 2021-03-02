@@ -44,8 +44,10 @@ class AppConfig @Inject()(config: Configuration) {
 
   lazy val relationshipName: String =
     config.get[String]("microservice.services.self.relationship-establishment.name")
-  lazy val relationshipIdentifier: String =
-    config.get[String]("microservice.services.self.relationship-establishment.identifier")
+  lazy val taxableRelationshipIdentifier: String =
+    config.get[String]("microservice.services.self.relationship-establishment.taxable.identifier")
+  lazy val nonTaxableRelationshipIdentifier: String =
+    config.get[String]("microservice.services.self.relationship-establishment.nonTaxable.identifier")
 
   lazy val enrolmentStoreProxyUrl: String = config.get[Service]("microservice.services.enrolment-store-proxy").baseUrl
 
