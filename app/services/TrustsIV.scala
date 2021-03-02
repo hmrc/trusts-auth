@@ -29,8 +29,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class TrustsIV @Inject()(trustsAuth: TrustsAuthorisedFunctions) extends Logging {
 
   def authenticate[A](identifier: TrustIdentifier,
-                      onIVRelationshipExisting: Future[TrustAuthResponse],
-                      onIVRelationshipNotExisting: Future[TrustAuthResponse]
+                      onIVRelationshipExisting: => Future[TrustAuthResponse],
+                      onIVRelationshipNotExisting: => Future[TrustAuthResponse]
                      )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TrustAuthResponse] = {
 
     val relationship = identifier match {
