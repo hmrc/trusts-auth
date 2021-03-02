@@ -18,7 +18,7 @@ package services
 
 import com.google.inject.Inject
 import controllers.actions.TrustsAuthorisedFunctions
-import models.TrustAuthResponse
+import models.{TrustAuthResponse, TrustIdentifier, URN, UTR}
 import play.api.Logging
 import uk.gov.hmrc.auth.core.{BusinessKey, FailedRelationship, Relationship}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -28,19 +28,23 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class TrustsIV @Inject()(trustsAuth: TrustsAuthorisedFunctions) extends Logging {
 
-  def authenticate[A](utr: String,
-                      onIVRelationshipExisting: Future[TrustAuthResponse],
-                      onIVRelationshipNotExisting: Future[TrustAuthResponse]
+  def authenticate[A](identifier: TrustIdentifier,
+                      onIVRelationshipExisting: => Future[TrustAuthResponse],
+                      onIVRelationshipNotExisting: => Future[TrustAuthResponse]
                      )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TrustAuthResponse] = {
 
-    val trustIVRelationship =
-      Relationship(trustsAuth.config.relationshipName, Set(BusinessKey(trustsAuth.config.relationshipIdentifier, utr)))
+    val relationship = identifier match {
+      case UTR(utr) =>
+        Relationship(trustsAuth.config.relationshipName, Set(BusinessKey(trustsAuth.config.taxableRelationshipIdentifier, utr)))
+      case URN(urn) =>
+        Relationship(trustsAuth.config.relationshipName, Set(BusinessKey(trustsAuth.config.nonTaxableRelationshipIdentifier, urn)))
+    }
 
-    trustsAuth.authorised(trustIVRelationship) {
+    trustsAuth.authorised(relationship) {
       onIVRelationshipExisting
     } recoverWith {
       case FailedRelationship(msg) =>
-        logger.info(s"[IdentifyForPlayback][Session ID: ${Session.id(hc)}][UTR: $utr]" +
+        logger.info(s"[IdentifyForPlayback][Session ID: ${Session.id(hc)}][UTR/URN: $identifier]" +
           s" Relationship does not exist in Trust IV for user due to $msg")
         onIVRelationshipNotExisting
     }
