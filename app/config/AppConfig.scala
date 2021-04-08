@@ -26,7 +26,7 @@ import java.util.Base64
 import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
 
 @Singleton
-class AppConfig @Inject()(val config: Configuration) {
+class AppConfig @Inject()(config: Configuration) {
 
   val TAXABLE_ENROLMENT = "HMRC-TERS-ORG"
   val TAXABLE_ENROLMENT_ID = "SAUTR"
