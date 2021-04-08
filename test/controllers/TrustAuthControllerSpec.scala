@@ -37,6 +37,8 @@ import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.{EmptyRetrieval, Retrieval, ~}
 import uk.gov.hmrc.http.HeaderCarrier
 
+import java.nio.charset.StandardCharsets
+import java.util.Base64
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -707,7 +709,15 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
   "authorise access code" must {
 
-    "return true if access code is included in list of access codes" in {
+    def encodeAccessCode(accessCode: String): String =
+      Base64.getEncoder.encodeToString(accessCode.getBytes(StandardCharsets.UTF_8))
+
+    "return true if access code is included in list of decoded access codes" in {
+
+      val accessCode = "known-access-code"
+      val encodedAccessCode = encodeAccessCode(accessCode)
+
+      accessCode mustNot equal(encodedAccessCode)
 
       val enrolments = Enrolments(Set())
 
@@ -715,17 +725,19 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
         .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
       val app = applicationBuilder()
-        .configure(("accessCodes", List("known-access-code")))
+        .configure(("accessCodes", List(encodedAccessCode)))
         .build()
 
-      val request = FakeRequest(GET, controllers.routes.TrustAuthController.authoriseAccessCode("known-access-code").url)
+      val request = FakeRequest(GET, controllers.routes.TrustAuthController.authoriseAccessCode(accessCode).url)
 
       val result = route(app, request).value
       status(result) mustBe OK
       contentAsJson(result) mustBe JsBoolean(true)
     }
 
-    "return false if access code is not included in list of access codes" in {
+    "return false if access code is not included in list of decoded access codes" in {
+
+      val accessCode = "unknown-access-code"
 
       val enrolments = Enrolments(Set())
 
@@ -736,7 +748,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
         .configure(("accessCodes", List()))
         .build()
 
-      val request = FakeRequest(GET, controllers.routes.TrustAuthController.authoriseAccessCode("unknown-access-code").url)
+      val request = FakeRequest(GET, controllers.routes.TrustAuthController.authoriseAccessCode(accessCode).url)
 
       val result = route(app, request).value
       status(result) mustBe OK
