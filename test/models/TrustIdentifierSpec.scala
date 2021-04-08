@@ -30,7 +30,7 @@ class TrustIdentifierSpec extends PlaySpec with GuiceOneAppPerSuite with Mockito
       TrustIdentifier("1111111111") mustEqual UTR("1111111111")
     }
 
-    "create a URN when passed a none UTR" in {
+    "create a URN when passed a non-UTR" in {
       TrustIdentifier("XATRUS12345678") mustEqual URN("XATRUS12345678")
       TrustIdentifier("111") mustEqual URN("111")
     }
