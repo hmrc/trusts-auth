@@ -23,7 +23,7 @@ import controllers.actions.IdentifierAction
 import models.EnrolmentStoreResponse.{AlreadyClaimed, NotClaimed}
 import models._
 import play.api.Logging
-import play.api.libs.json.Json
+import play.api.libs.json.{JsBoolean, Json}
 import play.api.mvc._
 import services.{AgentAuthorisedForDelegatedEnrolment, TrustsIV}
 import uk.gov.hmrc.auth.core.AffinityGroup.{Agent, Organisation}
@@ -172,5 +172,9 @@ class TrustAuthController @Inject()(cc: ControllerComponents,
           .flatMap(_.identifiers.find(_.key equals config.NON_TAXABLE_ENROLMENT_ID))
           .exists(_.value equals value)
     }
+  }
+
+  def authoriseAccessCode(accessCode: String): Action[AnyContent] = identifierAction {
+    Ok(JsBoolean(config.accessCodes.contains(accessCode)))
   }
 }

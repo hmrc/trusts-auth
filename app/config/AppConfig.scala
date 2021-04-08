@@ -16,11 +16,15 @@
 
 package config
 
+import com.typesafe.config.ConfigList
+
 import javax.inject.{Inject, Singleton}
 import play.api.Configuration
 
+import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
+
 @Singleton
-class AppConfig @Inject()(config: Configuration) {
+class AppConfig @Inject()(val config: Configuration) {
 
   val TAXABLE_ENROLMENT = "HMRC-TERS-ORG"
   val TAXABLE_ENROLMENT_ID = "SAUTR"
@@ -50,5 +54,7 @@ class AppConfig @Inject()(config: Configuration) {
     config.get[String]("microservice.services.self.relationship-establishment.nonTaxable.identifier")
 
   lazy val enrolmentStoreProxyUrl: String = config.get[Service]("microservice.services.enrolment-store-proxy").baseUrl
+
+  lazy val accessCodes: List[String] = config.get[ConfigList]("accessCodes").unwrapped().toList.map(_.toString)
 
 }
