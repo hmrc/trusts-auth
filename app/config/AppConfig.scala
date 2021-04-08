@@ -17,10 +17,11 @@
 package config
 
 import com.typesafe.config.ConfigList
+import implicits.Config._
 import play.api.Configuration
 
 import javax.inject.{Inject, Singleton}
-import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
+
 
 @Singleton
 class AppConfig @Inject()(config: Configuration) {
@@ -54,6 +55,6 @@ class AppConfig @Inject()(config: Configuration) {
 
   lazy val enrolmentStoreProxyUrl: String = config.get[Service]("microservice.services.enrolment-store-proxy").baseUrl
 
-  lazy val accessCodes: List[String] = config.get[ConfigList]("accessCodes").unwrapped().toList.map(_.toString)
+  lazy val accessCodes: List[String] = config.get[ConfigList]("accessCodes").toList[String]
 
 }
