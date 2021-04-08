@@ -32,6 +32,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import utils.Session
+import utils.EncoderUtils._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -175,6 +176,7 @@ class TrustAuthController @Inject()(cc: ControllerComponents,
   }
 
   def authoriseAccessCode(accessCode: String): Action[AnyContent] = identifierAction {
-    Ok(JsBoolean(config.accessCodes.contains(accessCode)))
+    val accessCodes = config.accessCodes.map(decode)
+    Ok(JsBoolean(accessCodes.contains(accessCode)))
   }
 }

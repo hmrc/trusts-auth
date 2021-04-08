@@ -36,9 +36,8 @@ import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.{EmptyRetrieval, Retrieval, ~}
 import uk.gov.hmrc.http.HeaderCarrier
+import utils.EncoderUtils._
 
-import java.nio.charset.StandardCharsets
-import java.util.Base64
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -709,15 +708,10 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
   "authorise access code" must {
 
-    def encodeAccessCode(accessCode: String): String =
-      Base64.getEncoder.encodeToString(accessCode.getBytes(StandardCharsets.UTF_8))
-
     "return true if access code is included in list of decoded access codes" in {
 
       val accessCode = "known-access-code"
-      val encodedAccessCode = encodeAccessCode(accessCode)
-
-      accessCode mustNot equal(encodedAccessCode)
+      val encodedAccessCode = encode(accessCode)
 
       val enrolments = Enrolments(Set())
 

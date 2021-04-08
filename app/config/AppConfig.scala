@@ -17,12 +17,9 @@
 package config
 
 import com.typesafe.config.ConfigList
-
-import javax.inject.{Inject, Singleton}
 import play.api.Configuration
 
-import java.nio.charset.StandardCharsets
-import java.util.Base64
+import javax.inject.{Inject, Singleton}
 import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
 
 @Singleton
@@ -57,10 +54,6 @@ class AppConfig @Inject()(config: Configuration) {
 
   lazy val enrolmentStoreProxyUrl: String = config.get[Service]("microservice.services.enrolment-store-proxy").baseUrl
 
-  lazy val accessCodes: List[String] = config.get[ConfigList]("accessCodes")
-    .unwrapped()
-    .toList
-    .map(accessCode => Base64.getDecoder.decode(accessCode.toString))
-    .map(new String(_, StandardCharsets.UTF_8))
+  lazy val accessCodes: List[String] = config.get[ConfigList]("accessCodes").unwrapped().toList.map(_.toString)
 
 }
