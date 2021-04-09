@@ -30,7 +30,7 @@ import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.JsBoolean
+import play.api.libs.json.{JsString, Json}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core._
@@ -708,32 +708,49 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
   "authorise access code" must {
 
-    "return true if access code is included in list of decoded access codes" in {
+    val enrolments = Enrolments(Set())
+    val draftId: String = "draftId"
 
-      val accessCode = "known-access-code"
-      val encodedAccessCode = encode(accessCode)
-
-      val enrolments = Enrolments(Set())
+    "return OK with TrustAuthAllowed if access code is included in list of decoded access codes" in {
 
       when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
         .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
+
+      val accessCode = "known-access-code"
+      val encodedAccessCode = encode(accessCode)
 
       val app = applicationBuilder()
         .configure(("accessCodes", List(encodedAccessCode)))
         .build()
 
-      val request = FakeRequest(GET, controllers.routes.TrustAuthController.authoriseAccessCode(accessCode).url)
+      val request = FakeRequest(GET, controllers.routes.TrustAuthController.authoriseAccessCode(draftId).url)
+        .withJsonBody(JsString(accessCode))
 
       val result = route(app, request).value
       status(result) mustBe OK
-      contentAsJson(result) mustBe JsBoolean(true)
+      contentAsJson(result) mustBe Json.toJson(TrustAuthAllowed())
     }
 
-    "return false if access code is not included in list of decoded access codes" in {
+    "return OK with TrustAuthDenied if access code is not included in list of decoded access codes" in {
+
+      when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+        .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
       val accessCode = "unknown-access-code"
 
-      val enrolments = Enrolments(Set())
+      val app = applicationBuilder()
+        .configure(("accessCodes", List()))
+        .build()
+
+      val request = FakeRequest(GET, controllers.routes.TrustAuthController.authoriseAccessCode(draftId).url)
+        .withJsonBody(JsString(accessCode))
+
+      val result = route(app, request).value
+      status(result) mustBe OK
+      contentAsJson(result) mustBe Json.toJson(TrustAuthDenied("http://localhost:9781/trusts-registration/draftId/enter-access-code"))
+    }
+
+    "return BAD_REQUEST if access code is not in request body" in {
 
       when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
         .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
@@ -742,11 +759,10 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
         .configure(("accessCodes", List()))
         .build()
 
-      val request = FakeRequest(GET, controllers.routes.TrustAuthController.authoriseAccessCode(accessCode).url)
+      val request = FakeRequest(GET, controllers.routes.TrustAuthController.authoriseAccessCode(draftId).url)
 
       val result = route(app, request).value
-      status(result) mustBe OK
-      contentAsJson(result) mustBe JsBoolean(false)
+      status(result) mustBe BAD_REQUEST
     }
   }
 }
