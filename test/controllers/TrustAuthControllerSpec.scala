@@ -723,7 +723,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
         .configure(("accessCodes", List(encodedAccessCode)))
         .build()
 
-      val request = FakeRequest(GET, controllers.routes.TrustAuthController.authoriseAccessCode(draftId).url)
+      val request = FakeRequest(POST, controllers.routes.TrustAuthController.authoriseAccessCode(draftId).url)
         .withJsonBody(JsString(accessCode))
 
       val result = route(app, request).value
@@ -742,7 +742,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
         .configure(("accessCodes", List()))
         .build()
 
-      val request = FakeRequest(GET, controllers.routes.TrustAuthController.authoriseAccessCode(draftId).url)
+      val request = FakeRequest(POST, controllers.routes.TrustAuthController.authoriseAccessCode(draftId).url)
         .withJsonBody(JsString(accessCode))
 
       val result = route(app, request).value
@@ -750,7 +750,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
       contentAsJson(result) mustBe Json.toJson(TrustAuthDenied("http://localhost:9781/trusts-registration/draftId/enter-access-code"))
     }
 
-    "return BAD_REQUEST if access code is not in request body" in {
+    "return INTERNAL_SERVER_ERROR if access code is not in request body" in {
 
       when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
         .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
@@ -759,10 +759,10 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
         .configure(("accessCodes", List()))
         .build()
 
-      val request = FakeRequest(GET, controllers.routes.TrustAuthController.authoriseAccessCode(draftId).url)
+      val request = FakeRequest(POST, controllers.routes.TrustAuthController.authoriseAccessCode(draftId).url)
 
       val result = route(app, request).value
-      status(result) mustBe BAD_REQUEST
+      status(result) mustBe INTERNAL_SERVER_ERROR
     }
   }
 }

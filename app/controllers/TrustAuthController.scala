@@ -187,7 +187,8 @@ class TrustAuthController @Inject()(
             Ok(Json.toJson(TrustAuthDenied(config.enterAccessCodeUrl(draftId))))
           }
         case _ =>
-          BadRequest
+          logger.error(s"[authoriseAccessCode][Session ID: ${Session.id(hc)}] unable to extract access code from request body")
+          InternalServerError
       }
   }
 }
