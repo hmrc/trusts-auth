@@ -184,6 +184,7 @@ class TrustAuthController @Inject()(
           if (accessCodes.contains(accessCode)) {
             Ok(Json.toJson(TrustAuthAllowed()))
           } else {
+            // TODO - design to decide whether an invalid access code will reload the page or redirect to a failure page
             Ok(Json.toJson(TrustAuthDenied(config.enterAccessCodeUrl(draftId))))
           }
         case _ =>
