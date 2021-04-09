@@ -185,7 +185,7 @@ class TrustAuthController @Inject()(
             Ok(Json.toJson(TrustAuthAllowed()))
           } else {
             // TODO - design to decide whether an invalid access code will reload the page or redirect to a failure page
-            Ok(Json.toJson(TrustAuthDenied(config.enterAccessCodeUrl(draftId))))
+            Ok(Json.toJson(TrustAuthDenied(config.enterNonTaxableTrustRegistrationAccessCodeUrl(draftId))))
           }
         case _ =>
           logger.error(s"[authoriseAccessCode][Session ID: ${Session.id(hc)}] unable to extract access code from request body")

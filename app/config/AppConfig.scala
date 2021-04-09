@@ -56,7 +56,8 @@ class AppConfig @Inject()(config: Configuration,
 
   lazy val enrolmentStoreProxyUrl: String = servicesConfig.baseUrl("enrolment-store-proxy")
 
-  def enterAccessCodeUrl(draftId: String): String = config.get[String]("urls.enterAccessCode").replace(":draftId", draftId)
+  def enterNonTaxableTrustRegistrationAccessCodeUrl(draftId: String): String =
+    config.get[String]("urls.enterNonTaxableTrustRegistrationAccessCode").replace(":draftId", draftId)
 
   lazy val accessCodes: List[String] = config.get[ConfigList]("accessCodes").toList[String]
 

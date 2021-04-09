@@ -742,12 +742,15 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
         .configure(("accessCodes", List()))
         .build()
 
+      val appConfig = app.injector.instanceOf[AppConfig]
+
       val request = FakeRequest(POST, controllers.routes.TrustAuthController.authoriseAccessCode(draftId).url)
         .withJsonBody(JsString(accessCode))
 
       val result = route(app, request).value
       status(result) mustBe OK
-      contentAsJson(result) mustBe Json.toJson(TrustAuthDenied("http://localhost:9781/trusts-registration/draftId/enter-access-code"))
+      contentAsJson(result) mustBe
+        Json.toJson(TrustAuthDenied(appConfig.enterNonTaxableTrustRegistrationAccessCodeUrl(draftId)))
     }
 
     "return INTERNAL_SERVER_ERROR if access code is not in request body" in {
