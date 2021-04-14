@@ -181,12 +181,7 @@ class TrustAuthController @Inject()(
       request.body.asJson match {
         case Some(JsString(accessCode)) =>
           val accessCodes = config.accessCodes.map(decode)
-          if (accessCodes.contains(accessCode)) {
-            Ok(Json.toJson(TrustAuthAllowed()))
-          } else {
-            // TODO - design to decide whether an invalid access code will reload the page or redirect to a failure page
-            Ok(Json.toJson(TrustAuthDenied(config.enterNonTaxableTrustRegistrationAccessCodeUrl(draftId))))
-          }
+          Ok(Json.toJson(TrustAuthAllowed(accessCodes.contains(accessCode))))
         case _ =>
           logger.error(s"[authoriseAccessCode][Session ID: ${Session.id(hc)}] unable to extract access code from request body")
           InternalServerError

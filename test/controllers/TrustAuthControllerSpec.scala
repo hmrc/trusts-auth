@@ -711,7 +711,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
     val enrolments = Enrolments(Set())
     val draftId: String = "draftId"
 
-    "return OK with TrustAuthAllowed if access code is included in list of decoded access codes" in {
+    "return OK with TrustAuthAllowed(true) if access code is included in list of decoded access codes" in {
 
       when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
         .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
@@ -728,10 +728,10 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
       val result = route(app, request).value
       status(result) mustBe OK
-      contentAsJson(result) mustBe Json.toJson(TrustAuthAllowed())
+      contentAsJson(result) mustBe Json.toJson(TrustAuthAllowed(authorised = true))
     }
 
-    "return OK with TrustAuthDenied if access code is not included in list of decoded access codes" in {
+    "return OK with TrustAuthAllowed(false) if access code is not included in list of decoded access codes" in {
 
       when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
         .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
@@ -742,15 +742,12 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
         .configure(("accessCodes", List()))
         .build()
 
-      val appConfig = app.injector.instanceOf[AppConfig]
-
       val request = FakeRequest(POST, controllers.routes.TrustAuthController.authoriseAccessCode(draftId).url)
         .withJsonBody(JsString(accessCode))
 
       val result = route(app, request).value
       status(result) mustBe OK
-      contentAsJson(result) mustBe
-        Json.toJson(TrustAuthDenied(appConfig.enterNonTaxableTrustRegistrationAccessCodeUrl(draftId)))
+      contentAsJson(result) mustBe Json.toJson(TrustAuthAllowed(authorised = false))
     }
 
     "return INTERNAL_SERVER_ERROR if access code is not in request body" in {
