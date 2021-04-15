@@ -709,7 +709,6 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
   "authorise access code" must {
 
     val enrolments = Enrolments(Set())
-    val draftId: String = "draftId"
 
     "return OK with TrustAuthAllowed(true) if access code is included in list of decoded access codes" in {
 
@@ -723,7 +722,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
         .configure(("accessCodes", List(encodedAccessCode)))
         .build()
 
-      val request = FakeRequest(POST, controllers.routes.TrustAuthController.authoriseAccessCode(draftId).url)
+      val request = FakeRequest(POST, controllers.routes.TrustAuthController.authoriseAccessCode().url)
         .withJsonBody(JsString(accessCode))
 
       val result = route(app, request).value
@@ -742,7 +741,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
         .configure(("accessCodes", List()))
         .build()
 
-      val request = FakeRequest(POST, controllers.routes.TrustAuthController.authoriseAccessCode(draftId).url)
+      val request = FakeRequest(POST, controllers.routes.TrustAuthController.authoriseAccessCode().url)
         .withJsonBody(JsString(accessCode))
 
       val result = route(app, request).value
@@ -759,7 +758,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
         .configure(("accessCodes", List()))
         .build()
 
-      val request = FakeRequest(POST, controllers.routes.TrustAuthController.authoriseAccessCode(draftId).url)
+      val request = FakeRequest(POST, controllers.routes.TrustAuthController.authoriseAccessCode().url)
 
       val result = route(app, request).value
       status(result) mustBe INTERNAL_SERVER_ERROR

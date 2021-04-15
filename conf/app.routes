@@ -2,4 +2,4 @@
 
 GET        /authorised/:identifier                   controllers.TrustAuthController.authorisedForIdentifier(identifier: String)
 GET        /agent-authorised                         controllers.TrustAuthController.agentAuthorised()
-POST       /:draftId/access-code-for-non-taxable     controllers.TrustAuthController.authoriseAccessCode(draftId: String)
+POST       /access-code-for-non-taxable              controllers.TrustAuthController.authoriseAccessCode()

@@ -176,12 +176,14 @@ class TrustAuthController @Inject()(
     }
   }
 
-  def authoriseAccessCode(draftId: String): Action[AnyContent] = identifierAction {
+  def authoriseAccessCode(): Action[AnyContent] = identifierAction {
     implicit request =>
       request.body.asJson match {
         case Some(JsString(accessCode)) =>
           val accessCodes = config.accessCodes.map(decode)
-          Ok(Json.toJson(TrustAuthAllowed(accessCodes.contains(accessCode))))
+          val isCodeValid = accessCodes.contains(accessCode)
+          logger.info(s"[authoriseAccessCode][Session ID: ${Session.id(hc)}] access code authorised: $isCodeValid")
+          Ok(Json.toJson(TrustAuthAllowed(isCodeValid)))
         case _ =>
           logger.error(s"[authoriseAccessCode][Session ID: ${Session.id(hc)}] unable to extract access code from request body")
           InternalServerError
