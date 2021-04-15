@@ -31,7 +31,6 @@ import uk.gov.hmrc.auth.core.{EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import utils.EncoderUtils._
 import utils.Session
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -180,8 +179,7 @@ class TrustAuthController @Inject()(
     implicit request =>
       request.body.asJson match {
         case Some(JsString(accessCode)) =>
-          val accessCodes = config.accessCodes.map(decode)
-          val isCodeValid = accessCodes.contains(accessCode)
+          val isCodeValid = config.accessCodes.contains(accessCode)
           logger.info(s"[authoriseAccessCode][Session ID: ${Session.id(hc)}] access code authorised: $isCodeValid")
           Ok(Json.toJson(TrustAuthAllowed(isCodeValid)))
         case _ =>
