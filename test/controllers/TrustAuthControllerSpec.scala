@@ -36,7 +36,6 @@ import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.{EmptyRetrieval, Retrieval, ~}
 import uk.gov.hmrc.http.HeaderCarrier
-import utils.EncoderUtils._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
@@ -716,10 +715,9 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
         .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
       val accessCode = "known-access-code"
-      val encodedAccessCode = encode(accessCode)
 
       val app = applicationBuilder()
-        .configure(("accessCodes", List(encodedAccessCode)))
+        .configure(("accessCodes", List(accessCode)))
         .build()
 
       val request = FakeRequest(POST, controllers.routes.TrustAuthController.authoriseAccessCode().url)
