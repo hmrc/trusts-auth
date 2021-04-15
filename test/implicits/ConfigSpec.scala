@@ -14,26 +14,34 @@
  * limitations under the License.
  */
 
-package models
+package implicits
 
-import org.scalatest.{EitherValues, RecoverMethods}
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatestplus.mockito.MockitoSugar
+import com.typesafe.config.ConfigList
+import implicits.Config.TypedConfigList
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.inject.guice.GuiceApplicationBuilder
 
-class TrustIdentifierSpec extends PlaySpec with GuiceOneAppPerSuite with MockitoSugar with ScalaFutures with EitherValues with RecoverMethods {
+class ConfigSpec extends PlaySpec with GuiceOneAppPerSuite {
 
-  "TrustIdentifier" should {
-    "create a UTR when passed a UTR" in {
-      TrustIdentifier("1234567890") mustEqual UTR("1234567890")
-      TrustIdentifier("1111111111") mustEqual UTR("1111111111")
-    }
+  "Config" when {
 
-    "create a URN when passed a non-UTR" in {
-      TrustIdentifier("XATRUS12345678") mustEqual URN("XATRUS12345678")
-      TrustIdentifier("111") mustEqual URN("111")
+    "TypedConfigList" must {
+      "map ConfigList to List[T]" when {
+        "strings" in {
+
+          val path = "strings"
+          val list: List[String] = List("string1", "string2", "string3")
+
+          val app = new GuiceApplicationBuilder()
+            .configure((path, list))
+            .build()
+
+          val configList = app.configuration.get[ConfigList](path)
+
+          configList.toList[String] mustEqual list
+        }
+      }
     }
   }
-
 }

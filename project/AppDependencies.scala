@@ -1,6 +1,4 @@
 import play.core.PlayVersion.current
-import play.sbt.PlayImport._
-import sbt.Keys.libraryDependencies
 import sbt._
 
 object AppDependencies {
@@ -17,7 +15,9 @@ object AppDependencies {
     "org.pegdown"             %  "pegdown"                  % "1.6.0"                 % "test, it",
     "org.scalatestplus.play"  %% "scalatestplus-play"       % "4.0.3"                 % "test, it",
     "com.github.tomakehurst"  %  "wiremock-standalone"      % "2.25.1",
-    "org.mockito"             %  "mockito-all"              % "1.10.19"
+    "org.mockito"             %  "mockito-all"              % "1.10.19",
+    "org.scalacheck"          %% "scalacheck"               % "1.14.3"                % "test",
+    "wolfendale"              %% "scalacheck-gen-regexp"    % "0.1.2"                 % "test"
   )
 
   val akkaVersion = "2.6.7"

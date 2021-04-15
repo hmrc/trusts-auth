@@ -23,7 +23,7 @@ import controllers.actions.IdentifierAction
 import models.EnrolmentStoreResponse.{AlreadyClaimed, NotClaimed}
 import models._
 import play.api.Logging
-import play.api.libs.json.Json
+import play.api.libs.json.{JsString, Json}
 import play.api.mvc._
 import services.{AgentAuthorisedForDelegatedEnrolment, TrustsIV}
 import uk.gov.hmrc.auth.core.AffinityGroup.{Agent, Organisation}
@@ -31,17 +31,19 @@ import uk.gov.hmrc.auth.core.{EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import utils.EncoderUtils._
 import utils.Session
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class TrustAuthController @Inject()(cc: ControllerComponents,
-                                    identifierAction: IdentifierAction,
-                                    enrolmentStoreConnector: EnrolmentStoreConnector,
-                                    config: AppConfig,
-                                    trustsIV: TrustsIV,
-                                    delegatedEnrolment: AgentAuthorisedForDelegatedEnrolment
+class TrustAuthController @Inject()(
+                                     cc: ControllerComponents,
+                                     identifierAction: IdentifierAction,
+                                     enrolmentStoreConnector: EnrolmentStoreConnector,
+                                     config: AppConfig,
+                                     trustsIV: TrustsIV,
+                                     delegatedEnrolment: AgentAuthorisedForDelegatedEnrolment
                                    )(implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
 
   def authorisedForIdentifier(identifier: String): Action[AnyContent] = identifierAction.async {
@@ -126,7 +128,7 @@ class TrustAuthController @Inject()(cc: ControllerComponents,
   }
 
   private def checkIfTrustAlreadyClaimed(identifier: TrustIdentifier)(implicit hc : HeaderCarrier): Future[TrustAuthResponse] = {
-      enrolmentStoreConnector.checkIfAlreadyClaimed(identifier) flatMap {
+    enrolmentStoreConnector.checkIfAlreadyClaimed(identifier) flatMap {
       case AlreadyClaimed =>
         logger.info(s"[checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
           s" user is not enrolled for ${identifier.value} and the trust is already claimed")
@@ -172,5 +174,19 @@ class TrustAuthController @Inject()(cc: ControllerComponents,
           .flatMap(_.identifiers.find(_.key equals config.NON_TAXABLE_ENROLMENT_ID))
           .exists(_.value equals value)
     }
+  }
+
+  def authoriseAccessCode(): Action[AnyContent] = identifierAction {
+    implicit request =>
+      request.body.asJson match {
+        case Some(JsString(accessCode)) =>
+          val accessCodes = config.accessCodes.map(decode)
+          val isCodeValid = accessCodes.contains(accessCode)
+          logger.info(s"[authoriseAccessCode][Session ID: ${Session.id(hc)}] access code authorised: $isCodeValid")
+          Ok(Json.toJson(TrustAuthAllowed(isCodeValid)))
+        case _ =>
+          logger.error(s"[authoriseAccessCode][Session ID: ${Session.id(hc)}] unable to extract access code from request body")
+          InternalServerError
+      }
   }
 }

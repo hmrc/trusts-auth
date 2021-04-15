@@ -30,17 +30,18 @@ import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.{JsString, Json}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.{EmptyRetrieval, Retrieval, ~}
 import uk.gov.hmrc.http.HeaderCarrier
+import utils.EncoderUtils._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with MockitoSugar with ScalaFutures with EitherValues with RecoverMethods {
-
 
   private val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
   private val agentEnrolment = Enrolment("HMRC-AS-AGENT", List(EnrolmentIdentifier("AgentReferenceNumber", "SomeARN")), "Activated", None)
@@ -703,5 +704,64 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
       }
     }
 
+  }
+
+  "authorise access code" must {
+
+    val enrolments = Enrolments(Set())
+
+    "return OK with TrustAuthAllowed(true) if access code is included in list of decoded access codes" in {
+
+      when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+        .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
+
+      val accessCode = "known-access-code"
+      val encodedAccessCode = encode(accessCode)
+
+      val app = applicationBuilder()
+        .configure(("accessCodes", List(encodedAccessCode)))
+        .build()
+
+      val request = FakeRequest(POST, controllers.routes.TrustAuthController.authoriseAccessCode().url)
+        .withJsonBody(JsString(accessCode))
+
+      val result = route(app, request).value
+      status(result) mustBe OK
+      contentAsJson(result) mustBe Json.toJson(TrustAuthAllowed(authorised = true))
+    }
+
+    "return OK with TrustAuthAllowed(false) if access code is not included in list of decoded access codes" in {
+
+      when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+        .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
+
+      val accessCode = "unknown-access-code"
+
+      val app = applicationBuilder()
+        .configure(("accessCodes", List()))
+        .build()
+
+      val request = FakeRequest(POST, controllers.routes.TrustAuthController.authoriseAccessCode().url)
+        .withJsonBody(JsString(accessCode))
+
+      val result = route(app, request).value
+      status(result) mustBe OK
+      contentAsJson(result) mustBe Json.toJson(TrustAuthAllowed(authorised = false))
+    }
+
+    "return INTERNAL_SERVER_ERROR if access code is not in request body" in {
+
+      when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+        .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
+
+      val app = applicationBuilder()
+        .configure(("accessCodes", List()))
+        .build()
+
+      val request = FakeRequest(POST, controllers.routes.TrustAuthController.authoriseAccessCode().url)
+
+      val result = route(app, request).value
+      status(result) mustBe INTERNAL_SERVER_ERROR
+    }
   }
 }
