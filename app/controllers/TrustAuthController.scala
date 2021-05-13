@@ -29,8 +29,8 @@ import services.{AgentAuthorisedForDelegatedEnrolment, TrustsIV}
 import uk.gov.hmrc.auth.core.AffinityGroup.{Agent, Organisation}
 import uk.gov.hmrc.auth.core.{EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import utils.Session
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -47,7 +47,7 @@ class TrustAuthController @Inject()(
 
   def authorisedForIdentifier(identifier: String): Action[AnyContent] = identifierAction.async {
     implicit request =>
-      implicit val hc : HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+      implicit val hc : HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
 
       mapResult(request.user.affinityGroup match {
         case Agent =>
@@ -61,7 +61,7 @@ class TrustAuthController @Inject()(
 
   def agentAuthorised(): Action[AnyContent] = identifierAction.async {
     implicit request =>
-      implicit val hc : HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+      implicit val hc : HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
 
       mapResult(request.user.affinityGroup match {
         case Agent =>
