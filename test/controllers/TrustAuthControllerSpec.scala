@@ -142,28 +142,6 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
         }
       }
 
-      "trust has not been claimed by a trustee" must {
-
-        "redirect to trust not claimed page" in {
-
-          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
-            .thenReturn(authRetrievals(AffinityGroup.Agent, utrEnrolments))
-
-          when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(any[HeaderCarrier], any[ExecutionContext]))
-            .thenReturn(Future.successful(NotClaimed))
-
-          val app = applicationBuilder().build()
-
-          val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
-
-          val result = route(app, request).value
-          status(result) mustBe OK
-
-          val response = contentAsJson(result).as[TrustAuthResponse]
-          response mustBe TrustAuthDenied(appConfig.trustNotClaimedUrl)
-        }
-      }
-
       "agent has not been authorised for any trusts" must {
 
         "redirect to agent not authorised" in {
@@ -460,28 +438,6 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
           val response = contentAsJson(result).as[TrustAuthResponse]
           response mustBe TrustAuthAllowed()
-        }
-      }
-
-      "trust has not been claimed by a trustee" must {
-
-        "redirect to trust not claimed page" in {
-
-          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
-            .thenReturn(authRetrievals(AffinityGroup.Agent, urnEnrolments))
-
-          when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(any[HeaderCarrier], any[ExecutionContext]))
-            .thenReturn(Future.successful(NotClaimed))
-
-          val app = applicationBuilder().build()
-
-          val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)
-
-          val result = route(app, request).value
-          status(result) mustBe OK
-
-          val response = contentAsJson(result).as[TrustAuthResponse]
-          response mustBe TrustAuthDenied(appConfig.trustNotClaimedUrl)
         }
       }
 
