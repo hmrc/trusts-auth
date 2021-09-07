@@ -4,13 +4,32 @@ import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
 
 val appName = "trusts-auth"
 
+val excludedPackages = Seq(
+  "<empty>",
+  ".*Reverse.*",
+  ".*Routes.*",
+  ".*standardError*.*",
+  ".*main_template*.*",
+  "uk.gov.hmrc.BuildInfo",
+  "app.*",
+  "prod.*",
+  "config.*",
+  "testOnlyDoNotUseInAppConf.*",
+  "views.html.*",
+  "testOnly.*",
+  "com.kenshoo.play.metrics*.*",
+  ".*LocalDateService.*",
+  ".*LocalDateTimeService.*",
+  ".*RichJsValue.*",
+  ".*Repository.*"
+)
+
 lazy val scoverageSettings = {
   import scoverage.ScoverageKeys
   Seq(
-    ScoverageKeys.coverageExcludedPackages := "<empty>;Reverse.*;trusts.Routes.*;estates.Routes.*;prod.*;testOnlyDoNotUseInAppConf.*;" +
-      "uk.gov.hmrc.BuildInfo;app.*;prod.*;uk.gov.hmrc.trusts-auth.config.*",
+    ScoverageKeys.coverageExcludedPackages := excludedPackages.mkString(";"),
     ScoverageKeys.coverageMinimum := 80,
-    ScoverageKeys.coverageFailOnMinimum := false,
+    ScoverageKeys.coverageFailOnMinimum := true,
     ScoverageKeys.coverageHighlighting := true
   )
 }
@@ -25,6 +44,7 @@ lazy val microservice = Project(appName, file("."))
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
     dependencyOverrides ++= AppDependencies.overrides
   )
+  .settings(scoverageSettings)
   .settings(PlayKeys.playDefaultPort := 9794)
   .settings(publishingSettings: _*)
   .configs(IntegrationTest)
