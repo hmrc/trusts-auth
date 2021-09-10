@@ -16,8 +16,6 @@
 
 package config
 
-import com.typesafe.config.ConfigList
-import implicits.Config._
 import play.api.Configuration
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
@@ -57,7 +55,5 @@ class AppConfig @Inject()(config: Configuration,
     config.get[String]("microservice.services.self.relationship-establishment.nonTaxable.identifier")
 
   lazy val enrolmentStoreProxyUrl: String = servicesConfig.baseUrl("enrolment-store-proxy")
-
-  lazy val accessCodes: List[String] = config.get[ConfigList]("accessCodes").toList[String]
 
 }
