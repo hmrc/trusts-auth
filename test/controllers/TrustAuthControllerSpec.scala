@@ -59,7 +59,6 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
     new GuiceApplicationBuilder()
       .overrides(bind[TrustsAuthorisedFunctions].toInstance(trustsAuth))
       .overrides(bind[EnrolmentStoreConnector].toInstance(mockEnrolmentStoreConnector))
-      .configure(Map("features.primaryEnrolmentCheck.enabled" -> false))
 
   "authorisedForIdentifier with a utr" when {
 
@@ -112,7 +111,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
         }
       }
 
-      "trust is claimed and agent is authorised" must {
+      "agent is authorised" must {
 
         "return authorised for a UTR" in {
 
@@ -128,9 +127,6 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
           when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
             .thenReturn(Future.successful(()))
 
-          when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(any(), any()))
-            .thenReturn(Future.successful(AlreadyClaimed))
-
           val app = applicationBuilder().build()
 
           val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
@@ -140,30 +136,6 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
           val response = contentAsJson(result).as[TrustAuthResponse]
           response mustBe TrustAuthAllowed()
-        }
-      }
-
-      "trust has not been claimed by a trustee" must {
-
-        "redirect to trust not claimed page when primary enrolment check enabled" in {
-
-          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
-            .thenReturn(authRetrievals(AffinityGroup.Agent, utrEnrolments))
-
-          when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(any[HeaderCarrier], any[ExecutionContext]))
-            .thenReturn(Future.successful(NotClaimed))
-
-          val app = applicationBuilder()
-            .configure(Map("features.primaryEnrolmentCheck.enabled" -> true))
-            .build()
-
-          val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
-
-          val result = route(app, request).value
-          status(result) mustBe OK
-
-          val response = contentAsJson(result).as[TrustAuthResponse]
-          response mustBe TrustAuthDenied(appConfig.trustNotClaimedUrl)
         }
       }
 
@@ -184,9 +156,6 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
           when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
             .thenReturn(Future.failed(InsufficientEnrolments()))
-
-          when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(any(), any()))
-            .thenReturn(Future.successful(AlreadyClaimed))
 
           val app = applicationBuilder().build()
 
@@ -220,10 +189,6 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
           when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
             .thenReturn(Future.failed(InsufficientEnrolments()))
-
-
-          when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(any(), any()))
-            .thenReturn(Future.successful(AlreadyClaimed))
 
           val app = applicationBuilder().build()
 
@@ -435,7 +400,7 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
         }
       }
 
-      "trust is claimed and agent is authorised" must {
+      "agent is authorised" must {
 
         "return OK" in {
 
@@ -451,9 +416,6 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
           when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
             .thenReturn(Future.successful(()))
 
-          when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(any(), any()))
-            .thenReturn(Future.successful(AlreadyClaimed))
-
           val app = applicationBuilder().build()
 
           val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)
@@ -463,30 +425,6 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
           val response = contentAsJson(result).as[TrustAuthResponse]
           response mustBe TrustAuthAllowed()
-        }
-      }
-
-      "trust has not been claimed by a trustee" must {
-
-        "redirect to trust not claimed page when primary enrolment check enabled" in {
-
-          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
-            .thenReturn(authRetrievals(AffinityGroup.Agent, urnEnrolments))
-
-          when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(any[HeaderCarrier], any[ExecutionContext]))
-            .thenReturn(Future.successful(NotClaimed))
-
-          val app = applicationBuilder()
-            .configure(Map("features.primaryEnrolmentCheck.enabled" -> true))
-            .build()
-
-          val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)
-
-          val result = route(app, request).value
-          status(result) mustBe OK
-
-          val response = contentAsJson(result).as[TrustAuthResponse]
-          response mustBe TrustAuthDenied(appConfig.trustNotClaimedUrl)
         }
       }
 
@@ -507,9 +445,6 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
           when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
             .thenReturn(Future.failed(InsufficientEnrolments()))
-
-          when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(any(), any()))
-            .thenReturn(Future.successful(AlreadyClaimed))
 
           val app = applicationBuilder().build()
 
@@ -543,10 +478,6 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
           when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
             .thenReturn(Future.failed(InsufficientEnrolments()))
-
-
-          when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(any(), any()))
-            .thenReturn(Future.successful(AlreadyClaimed))
 
           val app = applicationBuilder().build()
 

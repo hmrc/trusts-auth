@@ -34,11 +34,11 @@ class AgentAuthorisedForDelegatedEnrolment @Inject()(trustsAuth: TrustsAuthorise
                       ec: ExecutionContext): Future[TrustAuthResponse] = {
 
     val predicate = identifier match {
-      case UTR(value) =>
+      case UTR(_) =>
         Enrolment(config.TAXABLE_ENROLMENT)
           .withIdentifier(config.TAXABLE_ENROLMENT_ID, identifier.value)
           .withDelegatedAuthRule("trust-auth")
-      case URN(value) =>
+      case URN(_) =>
         Enrolment(config.NON_TAXABLE_ENROLMENT)
           .withIdentifier(config.NON_TAXABLE_ENROLMENT_ID, identifier.value)
           .withDelegatedAuthRule("trust-auth")
