@@ -144,26 +144,8 @@ class TrustAuthController @Inject()(
   }
 
   private def checkIfAgentAuthorised[A](identifier: TrustIdentifier)(implicit hc: HeaderCarrier): Future[TrustAuthResponse] = {
-
-    if (config.primaryEnrolmentCheckEnabled) {
-      logger.info(s"[checkIfAgentAuthorised][Session ID: ${Session.id(hc)}] authenticating agent for ${identifier.value}")
-
-      enrolmentStoreConnector.checkIfAlreadyClaimed(identifier) flatMap {
-        case NotClaimed =>
-          logger.info(s"[checkIfAgentAuthorised][Session ID: ${Session.id(hc)}] agent not authenticated for ${identifier.value}, trust is not claimed")
-          Future.successful(TrustAuthDenied(config.trustNotClaimedUrl))
-        case AlreadyClaimed =>
-          logger.info(s"[checkIfAgentAuthorised][Session ID: ${Session.id(hc)}] ${identifier.value} is claimed, checking if agent is authorised")
-          delegatedEnrolment.authenticate(identifier)
-        case _ =>
-          logger.info(s"[checkIfAgentAuthorised][Session ID: ${Session.id(hc)}] unable to determine if ${identifier.value} is already claimed")
-          Future.successful(TrustAuthInternalServerError)
-      }
-    } else {
-      logger.info(s"[checkIfAgentAuthorised][Session ID: ${Session.id(hc)}] ${identifier.value} checking if agent is authorised")
-
-      delegatedEnrolment.authenticate(identifier)
-    }
+    logger.info(s"[checkIfAgentAuthorised][Session ID: ${Session.id(hc)}] ${identifier.value} checking if agent is authorised")
+    delegatedEnrolment.authenticate(identifier)
   }
 
   private def checkForTrustEnrolmentForIdentifier[A](identifier: TrustIdentifier)(implicit request: IdentifierRequest[A]): Boolean = {

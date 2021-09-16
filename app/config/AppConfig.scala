@@ -42,8 +42,6 @@ class AppConfig @Inject()(config: Configuration,
   lazy val createAgentServicesAccountUrl: String = config.get[String]("urls.createAgentServicesAccount")
   lazy val maintainThisTrust: String = config.get[String]("urls.maintainThisTrust")
 
-  lazy val primaryEnrolmentCheckEnabled: Boolean = config.get[Boolean]("features.primaryEnrolmentCheck.enabled")
-
   def claimATrustUrl(identifier: String) =
     s"${config.get[String]("urls.startClaimATrust")}/$identifier"
 
