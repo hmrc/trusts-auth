@@ -42,33 +42,31 @@ object EnrolmentStoreResponse extends Logging {
   case object AlreadyClaimed extends EnrolmentStoreResponse
 
   implicit lazy val httpReads: HttpReads[EnrolmentStoreResponse] =
-    new HttpReads[EnrolmentStoreResponse] {
-      override def read(method: String, url: String, response: HttpResponse): EnrolmentStoreResponse = {
-        logger.debug(s"Response status received from ES0 api: ${response.status}")
+    (method: String, url: String, response: HttpResponse) => {
+      logger.debug(s"[EnrolmentStoreResponse] Response status received from ES0 api: ${response.status}")
 
-        response.status match {
-          case OK =>
-            response.json.as[EnrolmentStore] match {
-              case EnrolmentStore(Seq(), _) =>
-                logger.info(s"UTR has not been claimed")
-                NotClaimed
-              case _ =>
-                logger.info(s"UTR has already been claimed")
-                AlreadyClaimed
-            }
-          case NO_CONTENT =>
-            logger.info(s"UTR is not claimed or delegated")
-            NotClaimed
-          case SERVICE_UNAVAILABLE =>
-            ServiceUnavailable
-          case FORBIDDEN =>
-            Forbidden
-          case BAD_REQUEST =>
-            BadRequest
-          case _ =>
-            logger.info(s"Unexpected response from EnrolmentStore")
-            ServerError
-        }
+      response.status match {
+        case OK =>
+          response.json.as[EnrolmentStore] match {
+            case EnrolmentStore(Seq(), _) =>
+              logger.info("[EnrolmentStoreResponse] UTR has not been claimed")
+              NotClaimed
+            case _ =>
+              logger.info("[EnrolmentStoreResponse] UTR has already been claimed")
+              AlreadyClaimed
+          }
+        case NO_CONTENT =>
+          logger.info("[EnrolmentStoreResponse] UTR is not claimed or delegated")
+          NotClaimed
+        case SERVICE_UNAVAILABLE =>
+          ServiceUnavailable
+        case FORBIDDEN =>
+          Forbidden
+        case BAD_REQUEST =>
+          BadRequest
+        case _ =>
+          logger.info("[EnrolmentStoreResponse] Unexpected response from EnrolmentStore")
+          ServerError
       }
     }
 }

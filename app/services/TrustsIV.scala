@@ -44,7 +44,7 @@ class TrustsIV @Inject()(trustsAuth: TrustsAuthorisedFunctions) extends Logging 
       onIVRelationshipExisting
     } recoverWith {
       case FailedRelationship(msg) =>
-        logger.info(s"[IdentifyForPlayback][Session ID: ${Session.id(hc)}][UTR/URN: $identifier]" +
+        logger.info(s"[TrustsIV][authenticate][Session ID: ${Session.id(hc)}][UTR/URN: $identifier]" +
           s" Relationship does not exist in Trust IV for user due to $msg")
         onIVRelationshipNotExisting
     }

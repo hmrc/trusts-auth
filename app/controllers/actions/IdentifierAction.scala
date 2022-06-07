@@ -54,10 +54,10 @@ class AuthenticatedIdentifierAction @Inject()(
       case Some(internalId) ~ Some(Organisation) ~ enrolments =>
         block(IdentifierRequest(request, OrganisationUser(internalId, enrolments)))
       case Some(internalId) ~ Some(Individual) ~ enrolments =>
-        logger.info(s"[Session ID: ${Session.id(hc)}] Unauthorised due to affinityGroup being Individual")
+        logger.info(s"[AuthenticatedIdentifierAction][Session ID: ${Session.id(hc)}] Unauthorised due to affinityGroup being Individual")
         block(IdentifierRequest(request, IndividualUser(internalId, enrolments)))
       case _ =>
-        logger.warn(s"[Session ID: ${Session.id(hc)}] Unable to retrieve internal id")
+        logger.warn(s"[AuthenticatedIdentifierAction][Session ID: ${Session.id(hc)}] Unable to retrieve internal id")
         throw new UnauthorizedException("Unable to retrieve internal Id")
     } recover {
       case _ => Status(UNAUTHORIZED)

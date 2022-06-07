@@ -30,6 +30,9 @@ class AppConfig @Inject()(config: Configuration,
   val NON_TAXABLE_ENROLMENT = "HMRC-TERSNT-ORG"
   val NON_TAXABLE_ENROLMENT_ID = "URN"
 
+  val AGENT_ENROLMENT = "HMRC-AS-AGENT"
+  val AGENT_ENROLMENT_ID = "AgentReferenceNumber"
+
   val authBaseUrl: String = servicesConfig.baseUrl("auth")
 
   val auditingEnabled: Boolean = config.get[Boolean]("auditing.enabled")

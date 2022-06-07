@@ -43,7 +43,7 @@ class EnrolmentStoreConnector @Inject()(http: HttpClient, config: AppConfig) ext
 
   def checkIfAlreadyClaimed(identifier: TrustIdentifier)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[EnrolmentStoreResponse] = {
     val url = enrolmentsEndpoint(identifier)
-    logger.info(s"checkIfAlreadyClaimed using $url")
+    logger.info(s"[EnrolmentStoreConnector][checkIfAlreadyClaimed] calling $url")
     http.GET[EnrolmentStoreResponse](enrolmentsEndpoint(identifier))(EnrolmentStoreResponse.httpReads, hc, ec)
   }
 }
