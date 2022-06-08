@@ -39,7 +39,7 @@ lazy val microservice = Project(appName, file("."))
   .settings(
     inConfig(Test)(testSettings),
     majorVersion := 0,
-    scalaVersion := "2.12.12",
+    scalaVersion := "2.12.15",
     SilencerSettings(),
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
     dependencyOverrides ++= AppDependencies.overrides

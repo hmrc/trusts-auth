@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,14 +45,14 @@ class AgentAuthorisedForDelegatedEnrolment @Inject()(trustsAuth: TrustsAuthorise
     }
 
     trustsAuth.authorised(predicate) {
-      logger.info(s"[Session ID: ${Session.id(hc)}] agent is authorised for delegated enrolment for ${identifier.value}")
+      logger.info(s"[AgentAuthorisedForDelegatedEnrolment][Session ID: ${Session.id(hc)}] agent is authorised for delegated enrolment for ${identifier.value}")
       Future.successful(TrustAuthAllowed())
     } recover {
       case _ : InsufficientEnrolments =>
-        logger.info(s"[Session ID: ${Session.id(hc)}] agent is not authorised for delegated enrolment for ${identifier.value}")
+        logger.info(s"[AgentAuthorisedForDelegatedEnrolment][Session ID: ${Session.id(hc)}] agent is not authorised for delegated enrolment for ${identifier.value}")
         TrustAuthDenied(config.agentNotAuthorisedUrl)
       case _ =>
-        logger.info(s"[Session ID: ${Session.id(hc)}] agent is not authorised for ${identifier.value}")
+        logger.info(s"[AgentAuthorisedForDelegatedEnrolment][Session ID: ${Session.id(hc)}] agent is not authorised for ${identifier.value}")
         TrustAuthDenied(config.unauthorisedUrl)
     }
   }

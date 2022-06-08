@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ class TrustsIV @Inject()(trustsAuth: TrustsAuthorisedFunctions) extends Logging 
       onIVRelationshipExisting
     } recoverWith {
       case FailedRelationship(msg) =>
-        logger.info(s"[IdentifyForPlayback][Session ID: ${Session.id(hc)}][UTR/URN: $identifier]" +
+        logger.info(s"[TrustsIV][authenticate][Session ID: ${Session.id(hc)}][UTR/URN: $identifier]" +
           s" Relationship does not exist in Trust IV for user due to $msg")
         onIVRelationshipNotExisting
     }
