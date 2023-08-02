@@ -3,12 +3,15 @@ import sbt._
 
 object AppDependencies {
 
+  val bootstrapVersion = "7.19.0"
+
   val compile: Seq[ModuleID] = Seq(
-    "uk.gov.hmrc"             %% "bootstrap-backend-play-28"  % "5.24.0",
+    "uk.gov.hmrc"             %% "bootstrap-backend-play-28"  % bootstrapVersion,
     "com.typesafe.play"       %% "play-json-joda"             % "2.9.2"
   )
 
   val test: Seq[ModuleID] = Seq(
+    "uk.gov.hmrc"             %% "bootstrap-test-play-28"   % bootstrapVersion        % "test",
     "com.typesafe.play"       %% "play-test"                % current                 % "test",
     "org.scalatest"           %% "scalatest"                % "3.0.9"                 % "test",
     "org.scalatestplus"       %% "mockito-3-4"              % "3.3.0.0-SNAP3"         % "test, it",

@@ -28,7 +28,7 @@ lazy val scoverageSettings = {
   import scoverage.ScoverageKeys
   Seq(
     ScoverageKeys.coverageExcludedPackages := excludedPackages.mkString(";"),
-    ScoverageKeys.coverageMinimum := 80,
+    ScoverageKeys.coverageMinimumStmtTotal := 80,
     ScoverageKeys.coverageFailOnMinimum := true,
     ScoverageKeys.coverageHighlighting := true
   )
@@ -39,14 +39,14 @@ lazy val microservice = Project(appName, file("."))
   .settings(
     inConfig(Test)(testSettings),
     majorVersion := 0,
-    scalaVersion := "2.12.15",
+    scalaVersion := "2.13.11",
     SilencerSettings(),
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
+    libraryDependencySchemes ++= Seq("org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always),
     dependencyOverrides ++= AppDependencies.overrides
   )
   .settings(scoverageSettings)
   .settings(PlayKeys.playDefaultPort := 9794)
-  .settings(publishingSettings: _*)
   .configs(IntegrationTest)
   .settings(integrationTestSettings(): _*)
   .settings(resolvers += Resolver.jcenterRepo)
