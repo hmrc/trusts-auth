@@ -58,4 +58,4 @@ lazy val testSettings: Seq[Def.Setting[_]] = Seq(
   )
 )
 
-
+addCommandAlias("scalastyleAll", "all scalastyle Test/scalastyle IntegrationTest/scalastyle")
