@@ -18,12 +18,11 @@ package implicits
 
 import com.typesafe.config.ConfigList
 
-import scala.collection.convert.ImplicitConversions._
+import scala.jdk.CollectionConverters._
 
 object Config {
-
   implicit class TypedConfigList(configList: ConfigList) {
-    def toList[T]: List[T] = configList.unwrapped().toList.map(_.asInstanceOf[T])
+    def toList[T]: List[T] = configList.unwrapped().asScala.toList.map(_.asInstanceOf[T])
   }
 
 }
