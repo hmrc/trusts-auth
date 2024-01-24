@@ -37,7 +37,7 @@ lazy val microservice = Project(appName, file("."))
   .settings(
     inConfig(Test)(testSettings),
     majorVersion := 0,
-    scalaVersion := "2.13.11",
+    scalaVersion := "2.13.12",
     scalacOptions += "-Wconf:src=routes/.*:s",
     libraryDependencies ++= AppDependencies(),
     libraryDependencySchemes ++= Seq("org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always),
@@ -45,8 +45,6 @@ lazy val microservice = Project(appName, file("."))
   )
   .settings(scoverageSettings)
   .settings(PlayKeys.playDefaultPort := 9794)
-  .configs(IntegrationTest)
-  .settings(integrationTestSettings() *)
   .settings(resolvers += Resolver.jcenterRepo)
 
 lazy val testSettings: Seq[Def.Setting[?]] = Seq(
