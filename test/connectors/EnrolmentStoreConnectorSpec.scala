@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2024 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,20 @@
 
 package connectors
 
+import base.SpecBase
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import models.EnrolmentStoreResponse.{AlreadyClaimed, BadRequest, Forbidden, NotClaimed, ServiceUnavailable}
 import models.{URN, UTR}
-import org.scalatest.freespec.AsyncFreeSpec
-import org.scalatest.matchers.must.Matchers
 import play.api.Application
 import play.api.http.Status
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.http.HeaderCarrier
 import utils.WireMockHelper
 
-class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with Matchers with WireMockHelper {
+import scala.concurrent.ExecutionContext.Implicits.global
+
+class EnrolmentStoreConnectorSpec extends SpecBase with WireMockHelper {
 
   implicit lazy val hc: HeaderCarrier = HeaderCarrier()
 
@@ -47,11 +48,9 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with Matchers with WireM
     server.stubFor(get(urlEqualTo(urnEnrolmentsUrl)).willReturn(response))
   }
 
-  lazy val app: Application = new GuiceApplicationBuilder()
-    .configure(Seq(
-      "microservice.services.enrolment-store-proxy.port" -> server.port(),
-      "auditing.enabled" -> false
-    ): _*).build()
+  override lazy val app: Application = new GuiceApplicationBuilder()
+    .configure(defaultAppConfigurations ++ Map("microservice.services.enrolment-store-proxy.port" -> server.port()))
+    .build()
 
   private lazy val connector = app.injector.instanceOf[EnrolmentStoreConnector]
 
@@ -69,10 +68,10 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with Matchers with WireM
 
   private val principalId = Seq("ABCEDEFGI1234567")
 
-  "EnrolmentStoreConnector" - {
+  "EnrolmentStoreConnector" when {
 
-    "checkIfAlreadyClaimed" - {
-      "No Content when" - {
+    "checkIfAlreadyClaimed" when {
+      "No Content when" should {
         "No Content 204" in {
 
           wiremock(
@@ -88,7 +87,7 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with Matchers with WireM
         }
       }
 
-      "Cannot access trust when" - {
+      "Cannot access trust when" should {
         "non-empty principalUserIds retrieved using utr" in {
 
           wiremock(
@@ -132,7 +131,7 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with Matchers with WireM
         }
       }
 
-      "Service Unavailable when" - {
+      "Service Unavailable when" should {
         "Service Unavailable 503" in {
 
           wiremock(
@@ -153,7 +152,7 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with Matchers with WireM
         }
       }
 
-      "Forbidden when" - {
+      "Forbidden when" should {
         "Forbidden 403" in {
 
           wiremock(
@@ -174,7 +173,7 @@ class EnrolmentStoreConnectorSpec extends AsyncFreeSpec with Matchers with WireM
         }
       }
 
-      "Invalid service when" - {
+      "Invalid service when" should {
         "Bad Request 400" in {
 
           wiremock(

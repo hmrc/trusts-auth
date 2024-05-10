@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2024 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,27 @@
 
 package controllers.actions
 
+import base.SpecBase
 import config.AppConfig
-import org.mockito.Matchers.any
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito
 import org.mockito.Mockito._
-import org.scalatestplus.mockito.MockitoSugar
-import org.scalatestplus.play.PlaySpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.{Action, AnyContent, BodyParsers, Results}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.{AgentInformation, Retrieval, ~}
-import play.api.inject.bind
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class IdentifierActionSpec extends PlaySpec with MockitoSugar with GuiceOneAppPerSuite {
+class IdentifierActionSpec extends SpecBase {
 
   type RetrievalType = Option[String] ~ Option[AffinityGroup] ~ Enrolments
 
-  val mockAuthConnector: AuthConnector = mock[AuthConnector]
+  val mockAuthConnector: AuthConnector = Mockito.mock(classOf[AuthConnector])
   val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
 
   class Harness(authAction: IdentifierAction) {
@@ -48,14 +47,14 @@ class IdentifierActionSpec extends PlaySpec with MockitoSugar with GuiceOneAppPe
 
   private val noEnrollment = Enrolments(Set())
 
-  val agentInformation = AgentInformation(None, None, None)
+  val agentInformation: AgentInformation = AgentInformation(None, None, None)
 
   private def fakeRequest = FakeRequest("", "")
 
   private def authRetrievals(affinityGroup: AffinityGroup,
                              enrolment: Enrolments,
                              agentInformation: AgentInformation): Future[Some[String] ~ Some[AffinityGroup] ~ Enrolments] =
-    Future.successful(new ~(new ~(Some("id"), Some(affinityGroup)), enrolment))
+    Future.successful(new~(new~(Some("id"), Some(affinityGroup)), enrolment))
 
   private val agentEnrolment = Enrolments(Set(Enrolment("HMRC-AS-AGENT", List(EnrolmentIdentifier("AgentReferenceNumber", "SomeVal")), "Activated", None)))
 
@@ -68,6 +67,7 @@ class IdentifierActionSpec extends PlaySpec with MockitoSugar with GuiceOneAppPe
       .overrides(
         bind[IdentifierAction].toInstance(new FakeIdentifierAction(bodyParsers, affinityGroup, enrolments))
       )
+      .configure(defaultAppConfigurations)
 
   "invoking an AuthenticatedIdentifier" when {
 

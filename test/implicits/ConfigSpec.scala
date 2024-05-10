@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2024 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
 
 package implicits
 
+import base.SpecBase
 import com.typesafe.config.ConfigList
 import implicits.Config.TypedConfigList
-import org.scalatestplus.play.PlaySpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.inject.guice.GuiceApplicationBuilder
 
-class ConfigSpec extends PlaySpec with GuiceOneAppPerSuite {
+class ConfigSpec extends SpecBase {
 
   "Config" when {
 
@@ -32,9 +31,10 @@ class ConfigSpec extends PlaySpec with GuiceOneAppPerSuite {
 
           val path = "strings"
           val list: List[String] = List("string1", "string2", "string3")
+          val config = Map(path -> list)
 
           val app = new GuiceApplicationBuilder()
-            .configure((path, list))
+            .configure(defaultAppConfigurations ++ config)
             .build()
 
           val configList = app.configuration.get[ConfigList](path)
