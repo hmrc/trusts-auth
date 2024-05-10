@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
-package models
+package base
 
-sealed trait TrustIdentifier{
-  val value: String
-}
-final case class UTR(value: String) extends TrustIdentifier
-final case class URN(value: String) extends TrustIdentifier
+import org.scalatestplus.play.PlaySpec
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.inject.guice.GuiceApplicationBuilder
 
-object TrustIdentifier {
-  private val utrRegex = "^[0-9]{10}$".r.pattern
+trait SpecBase extends PlaySpec with GuiceOneAppPerSuite {
 
-  def apply(identifier: String): TrustIdentifier =
-    if (utrRegex.matcher(identifier).matches) UTR(identifier) else URN(identifier)
+  val defaultAppConfigurations: Map[String, Any] = Map(
+    "auditing.enabled" -> false,
+    "metrics.enabled" -> false,
+    "play.filters.disabled" -> List("play.filters.csrf.CSRFFilter", "play.filters.csp.CSPFilter")
+  )
+
+  protected def applicationBuilder(): GuiceApplicationBuilder =
+    new GuiceApplicationBuilder().configure(defaultAppConfigurations)
+
 }

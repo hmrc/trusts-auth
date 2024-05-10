@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2024 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,17 @@
 
 package controllers
 
+import base.SpecBase
 import config.AppConfig
 import connectors.EnrolmentStoreConnector
 import controllers.actions.TrustsAuthorisedFunctions
 import models.EnrolmentStoreResponse.{AlreadyClaimed, NotClaimed, ServerError}
 import models._
-import org.mockito.Matchers.{any, eq => mEq}
+import org.mockito.ArgumentMatchers.{any, eq => mEq}
+import org.mockito.Mockito
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{EitherValues, RecoverMethods}
-import org.scalatestplus.mockito.MockitoSugar
-import org.scalatestplus.play.PlaySpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.FakeRequest
@@ -38,13 +37,13 @@ import uk.gov.hmrc.auth.core.retrieve.{EmptyRetrieval, Retrieval, ~}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with MockitoSugar with ScalaFutures with EitherValues with RecoverMethods {
+class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValues with RecoverMethods {
 
   private val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
   private val agentEnrolment = Enrolment("HMRC-AS-AGENT", List(EnrolmentIdentifier("AgentReferenceNumber", "SomeARN")), "Activated", None)
 
-  private val mockAuthConnector: AuthConnector = mock[AuthConnector]
-  private val mockEnrolmentStoreConnector: EnrolmentStoreConnector = mock[EnrolmentStoreConnector]
+  private val mockAuthConnector: AuthConnector = Mockito.mock(classOf[AuthConnector])
+  private val mockEnrolmentStoreConnector: EnrolmentStoreConnector = Mockito.mock(classOf[EnrolmentStoreConnector])
 
   private type RetrievalType = Option[String] ~ Option[AffinityGroup] ~ Enrolments
 
@@ -53,10 +52,11 @@ class TrustAuthControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Moc
 
   private lazy val trustsAuth = new TrustsAuthorisedFunctions(mockAuthConnector, appConfig)
 
-  private def applicationBuilder(): GuiceApplicationBuilder =
+  override def applicationBuilder(): GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
       .overrides(bind[TrustsAuthorisedFunctions].toInstance(trustsAuth))
       .overrides(bind[EnrolmentStoreConnector].toInstance(mockEnrolmentStoreConnector))
+      .configure(defaultAppConfigurations)
 
   "authorisedForIdentifier with a utr" when {
 
