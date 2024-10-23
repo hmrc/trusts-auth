@@ -20,11 +20,12 @@ import com.google.inject.Inject
 import config.AppConfig
 import models.{EnrolmentStoreResponse, TrustIdentifier, URN, UTR}
 import play.api.Logging
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
+import uk.gov.hmrc.http.client.HttpClientV2
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class EnrolmentStoreConnector @Inject()(http: HttpClient, config: AppConfig) extends Logging {
+class EnrolmentStoreConnector @Inject()(http: HttpClientV2, config: AppConfig) extends Logging {
 
   private def enrolmentsEndpoint(identifier: TrustIdentifier): String = {
 
@@ -44,6 +45,8 @@ class EnrolmentStoreConnector @Inject()(http: HttpClient, config: AppConfig) ext
   def checkIfAlreadyClaimed(identifier: TrustIdentifier)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[EnrolmentStoreResponse] = {
     val url = enrolmentsEndpoint(identifier)
     logger.info(s"[EnrolmentStoreConnector][checkIfAlreadyClaimed] calling $url")
-    http.GET[EnrolmentStoreResponse](enrolmentsEndpoint(identifier))(EnrolmentStoreResponse.httpReads, hc, ec)
+    http.get(url"$url")
+      .setHeader(EnrolmentStoreResponse.httpReads, hc, ec)
+      .execute(EnrolmentStoreResponse)
   }
 }
