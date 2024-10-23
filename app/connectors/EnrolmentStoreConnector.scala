@@ -46,7 +46,6 @@ class EnrolmentStoreConnector @Inject()(http: HttpClientV2, config: AppConfig) e
     val url = enrolmentsEndpoint(identifier)
     logger.info(s"[EnrolmentStoreConnector][checkIfAlreadyClaimed] calling $url")
     http.get(url"$url")
-      .setHeader(EnrolmentStoreResponse.httpReads, hc, ec)
-      .execute(EnrolmentStoreResponse)
+      .execute[EnrolmentStoreResponse](EnrolmentStoreResponse.httpReads, ec)
   }
 }
