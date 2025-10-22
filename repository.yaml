@@ -1,1 +1,5 @@
+digital-service: TRS / Trusts
+description: This service is a facade in front of auth and agent-access-control, it is responsible for authenticating users who want to register and maintain a trust.
 repoVisibility: public_0C3F0CE3E6E6448FAD341E7BFA50FCD333E06A20CFF05FCACE61154DDBBADF71
+type: Service
+service-type: Backend
