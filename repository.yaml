@@ -8,5 +8,4 @@ test-repositories:
   - trusts-performance-tests
   - trusts-acceptance-tests
   - trusts-integration-tests
-  - trusts-iv-perf-tests
   - trusts-iv-ui-tests
