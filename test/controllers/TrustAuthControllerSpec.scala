@@ -40,9 +40,11 @@ import scala.concurrent.Future
 class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValues with RecoverMethods {
 
   private val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
-  private val agentEnrolment = Enrolment("HMRC-AS-AGENT", List(EnrolmentIdentifier("AgentReferenceNumber", "SomeARN")), "Activated", None)
 
-  private val mockAuthConnector: AuthConnector = Mockito.mock(classOf[AuthConnector])
+  private val agentEnrolment       =
+    Enrolment("HMRC-AS-AGENT", List(EnrolmentIdentifier("AgentReferenceNumber", "SomeARN")), "Activated", None)
+
+  private val mockAuthConnector: AuthConnector                     = Mockito.mock(classOf[AuthConnector])
   private val mockEnrolmentStoreConnector: EnrolmentStoreConnector = Mockito.mock(classOf[EnrolmentStoreConnector])
 
   private type RetrievalType = Option[String] ~ Option[AffinityGroup] ~ Enrolments
@@ -80,7 +82,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
             .thenReturn(authRetrievals(AffinityGroup.Agent, noEnrollment))
 
           val request = FakeRequest(GET, controllers.routes.TrustAuthController.agentAuthorised().url)
-          val result = route(app, request).value
+          val result  = route(app, request).value
 
           status(result) mustBe OK
 
@@ -100,7 +102,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
             .thenReturn(authRetrievals(AffinityGroup.Agent, agentEnrolments))
 
           val request = FakeRequest(GET, controllers.routes.TrustAuthController.agentAuthorised().url)
-          val result = route(app, request).value
+          val result  = route(app, request).value
 
           status(result) mustBe OK
 
@@ -171,10 +173,12 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
         "redirect to agent not authorised" in {
 
-          val enrolments = Enrolments(Set(
-            agentEnrolment,
-            Enrolment("HMRC-TERS-ORG", List(EnrolmentIdentifier("SAUTR", "1234567890")), "Activated", None)
-          ))
+          val enrolments = Enrolments(
+            Set(
+              agentEnrolment,
+              Enrolment("HMRC-TERS-ORG", List(EnrolmentIdentifier("SAUTR", "1234567890")), "Activated", None)
+            )
+          )
 
           when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
             .thenReturn(authRetrievals(AffinityGroup.Agent, enrolments))
@@ -352,9 +356,9 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
   "authorisedForIdentifier with a urn" when {
 
-    val urn = "XATRUST12345678"
+    val urn                = "XATRUST12345678"
     val urnTrustsEnrolment = Enrolment("HMRC-TERSNT-ORG", List(EnrolmentIdentifier("URN", urn)), "Activated", None)
-    val urnEnrolments = Enrolments(Set(agentEnrolment, urnTrustsEnrolment))
+    val urnEnrolments      = Enrolments(Set(agentEnrolment, urnTrustsEnrolment))
 
     "authenticating an agent user" when {
 
@@ -370,7 +374,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
             .thenReturn(authRetrievals(AffinityGroup.Agent, noEnrollment))
 
           val request = FakeRequest(GET, controllers.routes.TrustAuthController.agentAuthorised().url)
-          val result = route(app, request).value
+          val result  = route(app, request).value
 
           status(result) mustBe OK
 
@@ -389,7 +393,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
             .thenReturn(authRetrievals(AffinityGroup.Agent, agentEnrolments))
 
           val request = FakeRequest(GET, controllers.routes.TrustAuthController.agentAuthorised().url)
-          val result = route(app, request).value
+          val result  = route(app, request).value
 
           status(result) mustBe OK
 
@@ -460,10 +464,12 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
         "redirect to agent not authorised" in {
 
-          val enrolments = Enrolments(Set(
-            agentEnrolment,
-            Enrolment("HMRC-TERSNT-ORG", List(EnrolmentIdentifier("URN", "1234567890")), "Activated", None)
-          ))
+          val enrolments = Enrolments(
+            Set(
+              agentEnrolment,
+              Enrolment("HMRC-TERSNT-ORG", List(EnrolmentIdentifier("URN", "1234567890")), "Activated", None)
+            )
+          )
 
           when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
             .thenReturn(authRetrievals(AffinityGroup.Agent, enrolments))
@@ -638,4 +644,5 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
     }
 
   }
+
 }

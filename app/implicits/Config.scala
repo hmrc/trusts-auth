@@ -21,6 +21,7 @@ import com.typesafe.config.ConfigList
 import scala.jdk.CollectionConverters._
 
 object Config {
+
   implicit class TypedConfigList(configList: ConfigList) {
     def toList[T]: List[T] = configList.unwrapped().asScala.toList.map(_.asInstanceOf[T])
   }

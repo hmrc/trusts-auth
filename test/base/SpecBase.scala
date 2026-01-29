@@ -23,8 +23,8 @@ import play.api.inject.guice.GuiceApplicationBuilder
 trait SpecBase extends PlaySpec with GuiceOneAppPerSuite {
 
   val defaultAppConfigurations: Map[String, Any] = Map(
-    "auditing.enabled" -> false,
-    "metrics.enabled" -> false,
+    "auditing.enabled"      -> false,
+    "metrics.enabled"       -> false,
     "play.filters.disabled" -> List("play.filters.csrf.CSRFFilter", "play.filters.csp.CSPFilter")
   )
 

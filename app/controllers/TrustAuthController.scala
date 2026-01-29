@@ -36,60 +36,64 @@ import utils.Session
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class TrustAuthController @Inject()(
-                                     cc: ControllerComponents,
-                                     identifierAction: IdentifierAction,
-                                     enrolmentStoreConnector: EnrolmentStoreConnector,
-                                     config: AppConfig,
-                                     trustsIV: TrustsIV,
-                                     delegatedEnrolment: AgentAuthorisedForDelegatedEnrolment
-                                   )(implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
+class TrustAuthController @Inject() (
+  cc: ControllerComponents,
+  identifierAction: IdentifierAction,
+  enrolmentStoreConnector: EnrolmentStoreConnector,
+  config: AppConfig,
+  trustsIV: TrustsIV,
+  delegatedEnrolment: AgentAuthorisedForDelegatedEnrolment
+)(implicit ec: ExecutionContext)
+    extends BackendController(cc) with Logging {
 
-  def authorisedForIdentifier(identifier: String): Action[AnyContent] = identifierAction.async {
-    implicit request =>
-      implicit val hc : HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+  def authorisedForIdentifier(identifier: String): Action[AnyContent] = identifierAction.async { implicit request =>
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
-      mapResult(request.user.affinityGroup match {
-        case Agent =>
-          checkIfAgentAuthorised(TrustIdentifier(identifier))
-        case Organisation =>
-          checkIfTrustIsClaimedAndTrustIV(TrustIdentifier(identifier))
-        case _ =>
-          logger.warn("[TrustAuthController][authorisedForIdentifier] User is not enrolled as an Agent or Organisation - showing unauthorised page")
-          Future.successful(TrustAuthDenied(config.unauthorisedUrl))
-      })
+    mapResult(request.user.affinityGroup match {
+      case Agent        =>
+        checkIfAgentAuthorised(TrustIdentifier(identifier))
+      case Organisation =>
+        checkIfTrustIsClaimedAndTrustIV(TrustIdentifier(identifier))
+      case _            =>
+        logger.warn(
+          "[TrustAuthController][authorisedForIdentifier] User is not enrolled as an Agent or Organisation - showing unauthorised page"
+        )
+        Future.successful(TrustAuthDenied(config.unauthorisedUrl))
+    })
   }
 
-  def agentAuthorised(): Action[AnyContent] = identifierAction.async {
-    implicit request =>
-      implicit val hc : HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+  def agentAuthorised(): Action[AnyContent] = identifierAction.async { implicit request =>
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
-      mapResult(request.user.affinityGroup match {
-        case Agent =>
-          Future.successful(authoriseAgent(request))
-        case Organisation =>
-          Future.successful(TrustAuthAllowed)
-        case _ =>
-          logger.warn("[TrustAuthController][agentAuthorised] User is not enrolled as an Agent or Organisation - showing unauthorised page")
-          Future.successful(TrustAuthDenied(config.unauthorisedUrl))
-      })
+    mapResult(request.user.affinityGroup match {
+      case Agent        =>
+        Future.successful(authoriseAgent(request))
+      case Organisation =>
+        Future.successful(TrustAuthAllowed)
+      case _            =>
+        logger.warn(
+          "[TrustAuthController][agentAuthorised] User is not enrolled as an Agent or Organisation - showing unauthorised page"
+        )
+        Future.successful(TrustAuthDenied(config.unauthorisedUrl))
+    })
   }
 
   private def mapResult(result: Future[Object]): Future[Result] = result map {
     case TrustAuthInternalServerError => InternalServerError
-    case r: TrustAuthResponse => Ok(Json.toJson(r))
+    case r: TrustAuthResponse         => Ok(Json.toJson(r))
   }
 
-  private def authoriseAgent[A](request: IdentifierRequest[A])(implicit hc: HeaderCarrier): TrustAuthResponse = {
+  private def authoriseAgent[A](request: IdentifierRequest[A])(implicit hc: HeaderCarrier): TrustAuthResponse =
 
     getAgentReferenceNumber(request.user.enrolments) match {
       case Some(arn) if arn.nonEmpty =>
         TrustAuthAgentAllowed(arn)
-      case _ =>
-        logger.info(s"[TrustAuthController][authoriseAgent][Session ID: ${Session.id(hc)}] not a valid agent service account")
+      case _                         =>
+        logger.info(
+          s"[TrustAuthController][authoriseAgent][Session ID: ${Session.id(hc)}] not a valid agent service account"
+        )
         TrustAuthDenied(config.createAgentServicesAccountUrl)
     }
-  }
 
   private def getAgentReferenceNumber(enrolments: Enrolments): Option[String] =
     enrolments.enrolments
@@ -97,29 +101,37 @@ class TrustAuthController @Inject()(
       .flatMap(_.identifiers.find(_.key equals config.AGENT_ENROLMENT_ID))
       .collect { case EnrolmentIdentifier(_, value) => value }
 
-
-  private def checkIfTrustIsClaimedAndTrustIV[A](identifier: TrustIdentifier)
-                                                (implicit request: IdentifierRequest[A], hc: HeaderCarrier): Future[TrustAuthResponse] = {
+  private def checkIfTrustIsClaimedAndTrustIV[A](
+    identifier: TrustIdentifier
+  )(implicit request: IdentifierRequest[A], hc: HeaderCarrier): Future[TrustAuthResponse] = {
 
     val userEnrolled = checkForTrustEnrolmentForIdentifier(identifier)
 
-    logger.info(s"[TrustAuthController][checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
-      s" authenticating user for ${identifier.value}")
+    logger.info(
+      s"[TrustAuthController][checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
+        s" authenticating user for ${identifier.value}"
+    )
 
     if (userEnrolled) {
-      logger.info(s"[TrustAuthController][checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
-        s" user is enrolled for ${identifier.value}")
+      logger.info(
+        s"[TrustAuthController][checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
+          s" user is enrolled for ${identifier.value}"
+      )
 
       trustsIV.authenticate(
         identifier = identifier,
         onIVRelationshipExisting = {
-          logger.info(s"[TrustAuthController][checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
-            s" user has an IV session for ${identifier.value}")
+          logger.info(
+            s"[TrustAuthController][checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
+              s" user has an IV session for ${identifier.value}"
+          )
           Future.successful(TrustAuthAllowed())
         },
         onIVRelationshipNotExisting = {
-          logger.info(s"[TrustAuthController][checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
-            s" user does not have an IV session for ${identifier.value}")
+          logger.info(
+            s"[TrustAuthController][checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
+              s" user does not have an IV session for ${identifier.value}"
+          )
           Future.successful(TrustAuthDenied(config.maintainThisTrust))
         }
       )
@@ -128,29 +140,42 @@ class TrustAuthController @Inject()(
     }
   }
 
-  private def checkIfTrustAlreadyClaimed(identifier: TrustIdentifier)(implicit hc : HeaderCarrier): Future[TrustAuthResponse] = {
+  private def checkIfTrustAlreadyClaimed(
+    identifier: TrustIdentifier
+  )(implicit hc: HeaderCarrier): Future[TrustAuthResponse] =
     enrolmentStoreConnector.checkIfAlreadyClaimed(identifier) flatMap {
       case AlreadyClaimed =>
-        logger.info(s"[TrustAuthController][checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
-          s" user is not enrolled for ${identifier.value} and the trust is already claimed")
+        logger.info(
+          s"[TrustAuthController][checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
+            s" user is not enrolled for ${identifier.value} and the trust is already claimed"
+        )
         Future.successful(TrustAuthDenied(config.alreadyClaimedUrl))
-      case NotClaimed =>
-        logger.info(s"[TrustAuthController][checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
-          s" user is not enrolled for ${identifier.value} and the trust is not claimed")
+      case NotClaimed     =>
+        logger.info(
+          s"[TrustAuthController][checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
+            s" user is not enrolled for ${identifier.value} and the trust is not claimed"
+        )
         Future.successful(TrustAuthDenied(config.claimATrustUrl(identifier.value)))
-      case _ =>
-        logger.info(s"[TrustAuthController][checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
-          s" unable to determine if ${identifier.value} is already claimed")
+      case _              =>
+        logger.info(
+          s"[TrustAuthController][checkIfTrustIsClaimedAndTrustIV][Session ID: ${Session.id(hc)}]" +
+            s" unable to determine if ${identifier.value} is already claimed"
+        )
         Future.successful(TrustAuthInternalServerError)
     }
-  }
 
-  private def checkIfAgentAuthorised[A](identifier: TrustIdentifier)(implicit hc: HeaderCarrier): Future[TrustAuthResponse] = {
-    logger.info(s"[TrustAuthController][checkIfAgentAuthorised][Session ID: ${Session.id(hc)}] ${identifier.value} checking if agent is authorised")
+  private def checkIfAgentAuthorised[A](
+    identifier: TrustIdentifier
+  )(implicit hc: HeaderCarrier): Future[TrustAuthResponse] = {
+    logger.info(
+      s"[TrustAuthController][checkIfAgentAuthorised][Session ID: ${Session.id(hc)}] ${identifier.value} checking if agent is authorised"
+    )
     delegatedEnrolment.authenticate(identifier)
   }
 
-  private def checkForTrustEnrolmentForIdentifier[A](identifier: TrustIdentifier)(implicit request: IdentifierRequest[A]): Boolean = {
+  private def checkForTrustEnrolmentForIdentifier[A](
+    identifier: TrustIdentifier
+  )(implicit request: IdentifierRequest[A]): Boolean =
     identifier match {
       case UTR(value) =>
         request.user.enrolments.enrolments
@@ -163,5 +188,5 @@ class TrustAuthController @Inject()(
           .flatMap(_.identifiers.find(_.key equals config.NON_TAXABLE_ENROLMENT_ID))
           .exists(_.value equals value)
     }
-  }
+
 }

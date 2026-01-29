@@ -39,10 +39,9 @@ class EnrolmentStoreConnectorSpec extends SpecBase with WireMockHelper {
       aResponse()
         .withStatus(expectedStatus)
         .withBody(response)
-    } getOrElse {
+    } getOrElse
       aResponse()
         .withStatus(expectedStatus)
-    }
 
     server.stubFor(get(urlEqualTo(utrEnrolmentsUrl)).willReturn(response))
     server.stubFor(get(urlEqualTo(urnEnrolmentsUrl)).willReturn(response))
@@ -54,15 +53,17 @@ class EnrolmentStoreConnectorSpec extends SpecBase with WireMockHelper {
 
   private lazy val connector = app.injector.instanceOf[EnrolmentStoreConnector]
 
-  private lazy val utrServiceName = "HMRC-TERS-ORG"
-  private val utrIdentifierKey = "SAUTR"
-  private val utrIdentifier = UTR("0987654321")
+  private lazy val utrServiceName           = "HMRC-TERS-ORG"
+  private val utrIdentifierKey              = "SAUTR"
+  private val utrIdentifier                 = UTR("0987654321")
+
   private lazy val utrEnrolmentsUrl: String = s"/enrolment-store-proxy/enrolment-store/enrolments/" +
     s"$utrServiceName~$utrIdentifierKey~${utrIdentifier.value}/users"
 
-  private lazy val urnServiceName = "HMRC-TERSNT-ORG"
-  private val urnIdentifierKey = "URN"
-  private val urnIdentifier = URN("XATRUST12345678")
+  private lazy val urnServiceName           = "HMRC-TERSNT-ORG"
+  private val urnIdentifierKey              = "URN"
+  private val urnIdentifier                 = URN("XATRUST12345678")
+
   private lazy val urnEnrolmentsUrl: String = s"/enrolment-store-proxy/enrolment-store/enrolments/" +
     s"$urnServiceName~$urnIdentifierKey~${urnIdentifier.value}/users"
 
@@ -100,7 +101,8 @@ class EnrolmentStoreConnectorSpec extends SpecBase with WireMockHelper {
                  |    "delegatedUserIds": [
                  |    ]
                  |}""".stripMargin
-            ))
+            )
+          )
 
           connector.checkIfAlreadyClaimed(utrIdentifier) map { result =>
             server.verify(getRequestedFor(urlEqualTo(utrEnrolmentsUrl)))
@@ -121,7 +123,8 @@ class EnrolmentStoreConnectorSpec extends SpecBase with WireMockHelper {
                  |    "delegatedUserIds": [
                  |    ]
                  |}""".stripMargin
-            ))
+            )
+          )
 
           connector.checkIfAlreadyClaimed(urnIdentifier) map { result =>
             server.verify(getRequestedFor(urlEqualTo(urnEnrolmentsUrl)))
@@ -142,7 +145,8 @@ class EnrolmentStoreConnectorSpec extends SpecBase with WireMockHelper {
                 |   "errorCode": "SERVICE_UNAVAILABLE",
                 |   "message": "Service temporarily unavailable"
                 |}""".stripMargin
-            ))
+            )
+          )
 
           connector.checkIfAlreadyClaimed(utrIdentifier) map { result =>
             server.verify(getRequestedFor(urlEqualTo(utrEnrolmentsUrl)))
@@ -163,7 +167,8 @@ class EnrolmentStoreConnectorSpec extends SpecBase with WireMockHelper {
                 |   "errorCode": "CREDENTIAL_CANNOT_PERFORM_ADMIN_ACTION",
                 |   "message": "The User credentials are valid but the user does not have permission to perform the requested function"
                 |}""".stripMargin
-            ))
+            )
+          )
 
           connector.checkIfAlreadyClaimed(utrIdentifier) map { result =>
             server.verify(getRequestedFor(urlEqualTo(utrEnrolmentsUrl)))
@@ -184,7 +189,8 @@ class EnrolmentStoreConnectorSpec extends SpecBase with WireMockHelper {
                 |   "errorCode": "INVALID_SERVICE",
                 |   "message": "The provided service does not exist"
                 |}""".stripMargin
-            ))
+            )
+          )
 
           connector.checkIfAlreadyClaimed(utrIdentifier) map { result =>
             server.verify(getRequestedFor(urlEqualTo(utrEnrolmentsUrl)))

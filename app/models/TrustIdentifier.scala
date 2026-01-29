@@ -16,9 +16,10 @@
 
 package models
 
-sealed trait TrustIdentifier{
+sealed trait TrustIdentifier {
   val value: String
 }
+
 final case class UTR(value: String) extends TrustIdentifier
 final case class URN(value: String) extends TrustIdentifier
 
@@ -27,4 +28,5 @@ object TrustIdentifier {
 
   def apply(identifier: String): TrustIdentifier =
     if (utrRegex.matcher(identifier).matches) UTR(identifier) else URN(identifier)
+
 }

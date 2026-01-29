@@ -22,35 +22,36 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import javax.inject.{Inject, Singleton}
 
 @Singleton
-class AppConfig @Inject()(config: Configuration,
-                          servicesConfig: ServicesConfig) {
+class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig) {
 
-  val TAXABLE_ENROLMENT = "HMRC-TERS-ORG"
-  val TAXABLE_ENROLMENT_ID = "SAUTR"
-  val NON_TAXABLE_ENROLMENT = "HMRC-TERSNT-ORG"
+  val TAXABLE_ENROLMENT        = "HMRC-TERS-ORG"
+  val TAXABLE_ENROLMENT_ID     = "SAUTR"
+  val NON_TAXABLE_ENROLMENT    = "HMRC-TERSNT-ORG"
   val NON_TAXABLE_ENROLMENT_ID = "URN"
 
-  val AGENT_ENROLMENT = "HMRC-AS-AGENT"
+  val AGENT_ENROLMENT    = "HMRC-AS-AGENT"
   val AGENT_ENROLMENT_ID = "AgentReferenceNumber"
 
   val authBaseUrl: String = servicesConfig.baseUrl("auth")
 
   val auditingEnabled: Boolean = config.get[Boolean]("auditing.enabled")
-  val graphiteHost: String = config.get[String]("microservice.metrics.graphite.host")
+  val graphiteHost: String     = config.get[String]("microservice.metrics.graphite.host")
 
-  lazy val unauthorisedUrl: String = config.get[String]("urls.unauthorised")
-  lazy val alreadyClaimedUrl: String = config.get[String]("urls.alreadyClaimed")
-  lazy val agentNotAuthorisedUrl: String = config.get[String]("urls.agentNotAuthorised")
+  lazy val unauthorisedUrl: String               = config.get[String]("urls.unauthorised")
+  lazy val alreadyClaimedUrl: String             = config.get[String]("urls.alreadyClaimed")
+  lazy val agentNotAuthorisedUrl: String         = config.get[String]("urls.agentNotAuthorised")
   lazy val createAgentServicesAccountUrl: String = config.get[String]("urls.createAgentServicesAccount")
-  lazy val maintainThisTrust: String = config.get[String]("urls.maintainThisTrust")
+  lazy val maintainThisTrust: String             = config.get[String]("urls.maintainThisTrust")
 
   def claimATrustUrl(identifier: String) =
     s"${config.get[String]("urls.startClaimATrust")}/$identifier"
 
-  lazy val relationshipName: String =
+  lazy val relationshipName: String                 =
     config.get[String]("microservice.services.self.relationship-establishment.name")
-  lazy val taxableRelationshipIdentifier: String =
+
+  lazy val taxableRelationshipIdentifier: String    =
     config.get[String]("microservice.services.self.relationship-establishment.taxable.identifier")
+
   lazy val nonTaxableRelationshipIdentifier: String =
     config.get[String]("microservice.services.self.relationship-establishment.nonTaxable.identifier")
 

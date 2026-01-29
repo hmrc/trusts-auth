@@ -25,14 +25,13 @@ import uk.gov.hmrc.http.client.HttpClientV2
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class EnrolmentStoreConnector @Inject()(http: HttpClientV2, config: AppConfig) extends Logging {
+class EnrolmentStoreConnector @Inject() (http: HttpClientV2, config: AppConfig) extends Logging {
 
   private def enrolmentsEndpoint(identifier: TrustIdentifier): String = {
 
-    def url(enrolment: String, enrolmentId: String, identifier: String): String = {
+    def url(enrolment: String, enrolmentId: String, identifier: String): String =
       s"${config.enrolmentStoreProxyUrl}/enrolment-store-proxy/enrolment-store/enrolments/" +
         s"$enrolment~$enrolmentId~$identifier/users"
-    }
 
     identifier match {
       case UTR(value) =>
@@ -42,10 +41,14 @@ class EnrolmentStoreConnector @Inject()(http: HttpClientV2, config: AppConfig) e
     }
   }
 
-  def checkIfAlreadyClaimed(identifier: TrustIdentifier)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[EnrolmentStoreResponse] = {
+  def checkIfAlreadyClaimed(
+    identifier: TrustIdentifier
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[EnrolmentStoreResponse] = {
     val url = enrolmentsEndpoint(identifier)
     logger.info(s"[EnrolmentStoreConnector][checkIfAlreadyClaimed] calling $url")
-    http.get(url"$url")
+    http
+      .get(url"$url")
       .execute[EnrolmentStoreResponse](EnrolmentStoreResponse.httpReads, ec)
   }
+
 }
