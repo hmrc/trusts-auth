@@ -41,7 +41,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
   private val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
 
-  private val agentEnrolment       =
+  private val agentEnrolment =
     Enrolment("HMRC-AS-AGENT", List(EnrolmentIdentifier("AgentReferenceNumber", "SomeARN")), "Activated", None)
 
   private val mockAuthConnector: AuthConnector                     = Mockito.mock(classOf[AuthConnector])

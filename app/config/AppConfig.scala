@@ -46,10 +46,10 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
   def claimATrustUrl(identifier: String) =
     s"${config.get[String]("urls.startClaimATrust")}/$identifier"
 
-  lazy val relationshipName: String                 =
+  lazy val relationshipName: String =
     config.get[String]("microservice.services.self.relationship-establishment.name")
 
-  lazy val taxableRelationshipIdentifier: String    =
+  lazy val taxableRelationshipIdentifier: String =
     config.get[String]("microservice.services.self.relationship-establishment.taxable.identifier")
 
   lazy val nonTaxableRelationshipIdentifier: String =
