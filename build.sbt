@@ -1,9 +1,7 @@
-
 val appName = "trusts-auth"
 
 ThisBuild / scalaVersion := "2.13.16"
 ThisBuild / majorVersion := 0
-
 
 lazy val microservice = Project(appName, file("."))
   .enablePlugins(play.sbt.PlayScala, SbtDistributablesPlugin)
@@ -17,4 +15,4 @@ lazy val microservice = Project(appName, file("."))
   .settings(CodeCoverageSettings())
   .settings(PlayKeys.playDefaultPort := 9794)
 
-
+addCommandAlias("scalafmtAll", "all scalafmtSbt scalafmt Test/scalafmt")

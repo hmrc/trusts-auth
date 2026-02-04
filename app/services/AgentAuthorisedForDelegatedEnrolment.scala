@@ -27,11 +27,12 @@ import utils.Session
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class AgentAuthorisedForDelegatedEnrolment @Inject()(trustsAuth: TrustsAuthorisedFunctions, config: AppConfig) extends Logging {
+class AgentAuthorisedForDelegatedEnrolment @Inject() (trustsAuth: TrustsAuthorisedFunctions, config: AppConfig)
+    extends Logging {
 
-  def authenticate[A](identifier: TrustIdentifier)
-                     (implicit hc: HeaderCarrier,
-                      ec: ExecutionContext): Future[TrustAuthResponse] = {
+  def authenticate[A](
+    identifier: TrustIdentifier
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TrustAuthResponse] = {
 
     val predicate = identifier match {
       case UTR(_) =>
@@ -45,15 +46,22 @@ class AgentAuthorisedForDelegatedEnrolment @Inject()(trustsAuth: TrustsAuthorise
     }
 
     trustsAuth.authorised(predicate) {
-      logger.info(s"[AgentAuthorisedForDelegatedEnrolment][Session ID: ${Session.id(hc)}] agent is authorised for delegated enrolment for ${identifier.value}")
+      logger.info(
+        s"[AgentAuthorisedForDelegatedEnrolment][Session ID: ${Session.id(hc)}] agent is authorised for delegated enrolment for ${identifier.value}"
+      )
       Future.successful(TrustAuthAllowed())
     } recover {
-      case _ : InsufficientEnrolments =>
-        logger.info(s"[AgentAuthorisedForDelegatedEnrolment][Session ID: ${Session.id(hc)}] agent is not authorised for delegated enrolment for ${identifier.value}")
+      case _: InsufficientEnrolments =>
+        logger.info(
+          s"[AgentAuthorisedForDelegatedEnrolment][Session ID: ${Session.id(hc)}] agent is not authorised for delegated enrolment for ${identifier.value}"
+        )
         TrustAuthDenied(config.agentNotAuthorisedUrl)
-      case _ =>
-        logger.info(s"[AgentAuthorisedForDelegatedEnrolment][Session ID: ${Session.id(hc)}] agent is not authorised for ${identifier.value}")
+      case _                         =>
+        logger.info(
+          s"[AgentAuthorisedForDelegatedEnrolment][Session ID: ${Session.id(hc)}] agent is not authorised for ${identifier.value}"
+        )
         TrustAuthDenied(config.unauthorisedUrl)
     }
   }
+
 }

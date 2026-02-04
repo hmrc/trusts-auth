@@ -20,7 +20,5 @@ import com.google.inject.Inject
 import config.AppConfig
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions}
 
-class TrustsAuthorisedFunctions @Inject()(override val authConnector: AuthConnector,
-                                          val config: AppConfig) extends AuthorisedFunctions {
-
-}
+class TrustsAuthorisedFunctions @Inject() (override val authConnector: AuthConnector, val config: AppConfig)
+    extends AuthorisedFunctions {}

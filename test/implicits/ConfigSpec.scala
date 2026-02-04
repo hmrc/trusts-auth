@@ -29,9 +29,9 @@ class ConfigSpec extends SpecBase {
       "map ConfigList to List[T]" when {
         "strings" in {
 
-          val path = "strings"
+          val path               = "strings"
           val list: List[String] = List("string1", "string2", "string3")
-          val config = Map(path -> list)
+          val config             = Map(path -> list)
 
           val app = new GuiceApplicationBuilder()
             .configure(defaultAppConfigurations ++ config)
@@ -44,4 +44,5 @@ class ConfigSpec extends SpecBase {
       }
     }
   }
+
 }
