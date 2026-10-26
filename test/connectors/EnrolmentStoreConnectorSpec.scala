@@ -17,7 +17,7 @@
 package connectors
 
 import base.SpecBase
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import models.EnrolmentStoreResponse.{AlreadyClaimed, BadRequest, Forbidden, NotClaimed, ServiceUnavailable}
 import models.{URN, UTR}
@@ -31,7 +31,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class EnrolmentStoreConnectorSpec extends SpecBase with WireMockHelper {
 
-  implicit lazy val hc: HeaderCarrier = HeaderCarrier()
+  given hc: HeaderCarrier = HeaderCarrier()
 
   private def wiremock(expectedStatus: Int, expectedResponse: Option[String]): StubMapping = {
 

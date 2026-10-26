@@ -20,24 +20,28 @@ import base.SpecBase
 import config.AppConfig
 import connectors.EnrolmentStoreConnector
 import controllers.actions.TrustsAuthorisedFunctions
+import models.*
 import models.EnrolmentStoreResponse.{AlreadyClaimed, NotClaimed, ServerError}
-import models._
-import org.mockito.ArgumentMatchers.{any, eq => mEq}
+import org.mockito.ArgumentMatchers.{any, eq as mEq}
 import org.mockito.Mockito
 import org.mockito.Mockito.when
+import org.mockito.Mockito.reset
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{EitherValues, RecoverMethods}
+import org.scalatest.BeforeAndAfterEach
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
-import uk.gov.hmrc.auth.core._
+import play.api.test.Helpers.*
+import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.auth.core.retrieve.{EmptyRetrieval, Retrieval, ~}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import uk.gov.hmrc.http.HeaderCarrier
+import scala.concurrent.ExecutionContext
 
-class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValues with RecoverMethods {
+class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValues with RecoverMethods with BeforeAndAfterEach {
 
   private val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
 
@@ -46,6 +50,15 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
   private val mockAuthConnector: AuthConnector                     = Mockito.mock(classOf[AuthConnector])
   private val mockEnrolmentStoreConnector: EnrolmentStoreConnector = Mockito.mock(classOf[EnrolmentStoreConnector])
+
+  override protected def beforeEach(): Unit = {
+    super.beforeEach()
+
+    reset(
+      mockAuthConnector,
+      mockEnrolmentStoreConnector
+    )
+  }
 
   private type RetrievalType = Option[String] ~ Option[AffinityGroup] ~ Enrolments
 
@@ -78,7 +91,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
           val app = applicationBuilder().build()
 
-          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any[HeaderCarrier](), any[ExecutionContext]()))
             .thenReturn(authRetrievals(AffinityGroup.Agent, noEnrollment))
 
           val request = FakeRequest(GET, controllers.routes.TrustAuthController.agentAuthorised().url)
@@ -98,7 +111,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
           val app = applicationBuilder().build()
 
-          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
             .thenReturn(authRetrievals(AffinityGroup.Agent, agentEnrolments))
 
           val request = FakeRequest(GET, controllers.routes.TrustAuthController.agentAuthorised().url)
@@ -115,7 +128,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
         "return authorised for a UTR" in {
 
-          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
             .thenReturn(authRetrievals(AffinityGroup.Agent, utrEnrolments))
 
           val predicatedMatcher = mEq(
@@ -124,7 +137,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
               .withDelegatedAuthRule("trust-auth")
           )
 
-          when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
+          when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(using any(), any()))
             .thenReturn(Future.successful(()))
 
           val app = applicationBuilder().build()
@@ -145,7 +158,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
           val enrolments = Enrolments(Set(agentEnrolment))
 
-          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
             .thenReturn(authRetrievals(AffinityGroup.Agent, enrolments))
 
           val predicatedMatcher = mEq(
@@ -154,7 +167,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
               .withDelegatedAuthRule("trust-auth")
           )
 
-          when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
+          when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(using any(), any()))
             .thenReturn(Future.failed(InsufficientEnrolments()))
 
           val app = applicationBuilder().build()
@@ -180,7 +193,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
             )
           )
 
-          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
             .thenReturn(authRetrievals(AffinityGroup.Agent, enrolments))
 
           val predicatedMatcher = mEq(
@@ -189,7 +202,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
               .withDelegatedAuthRule("trust-auth")
           )
 
-          when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
+          when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(using any(), any()))
             .thenReturn(Future.failed(InsufficientEnrolments()))
 
           val app = applicationBuilder().build()
@@ -204,6 +217,56 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
         }
       }
 
+      "agent authorisation fails with an unexpected exception" must {
+
+        "redirect to the unauthorised page" in {
+
+          val enrolments = Enrolments(Set(agentEnrolment))
+
+          when(
+            mockAuthConnector.authorise(
+              any(),
+              any[Retrieval[RetrievalType]]()
+            )(using any(), any())
+          ).thenReturn(
+            authRetrievals(AffinityGroup.Agent, enrolments)
+          )
+
+          val predicatedMatcher = mEq(
+            Enrolment("HMRC-TERS-ORG")
+              .withIdentifier("SAUTR", utr)
+              .withDelegatedAuthRule("trust-auth")
+          )
+
+          when(
+            mockAuthConnector.authorise(
+              predicatedMatcher,
+              mEq(EmptyRetrieval)
+            )(using any(), any())
+          ).thenReturn(
+            Future.failed[Unit](
+              new RuntimeException("Unexpected delegated authorisation failure")
+            )
+          )
+
+          val app = applicationBuilder().build()
+
+          val request = FakeRequest(
+            GET,
+            controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url
+          )
+
+          val result = route(app, request).value
+
+          status(result).mustBe(OK)
+
+          val response = contentAsJson(result).as[TrustAuthResponse]
+
+          response.mustBe(
+            TrustAuthDenied(appConfig.unauthorisedUrl)
+          )
+        }
+      }
     }
 
     "authenticating an organisation user" when {
@@ -216,12 +279,12 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
             val enrolments = Enrolments(Set(utrTrustsEnrolment))
 
-            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
               .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
             val expectedRelationship = Relationship("Trusts", Set(BusinessKey("utr", utr)))
 
-            when(mockAuthConnector.authorise(mEq(expectedRelationship), mEq(EmptyRetrieval))(any(), any()))
+            when(mockAuthConnector.authorise(mEq(expectedRelationship), mEq(EmptyRetrieval))(using any(), any()))
               .thenReturn(Future.failed(FailedRelationship()))
 
             val app = applicationBuilder().build()
@@ -243,12 +306,12 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
             val enrolments = Enrolments(Set(utrTrustsEnrolment))
 
-            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
               .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
             val expectedRelationship = Relationship("Trusts", Set(BusinessKey("utr", utr)))
 
-            when(mockAuthConnector.authorise(mEq(expectedRelationship), mEq(EmptyRetrieval))(any(), any()))
+            when(mockAuthConnector.authorise(mEq(expectedRelationship), mEq(EmptyRetrieval))(using any(), any()))
               .thenReturn(Future.successful(()))
 
             val app = applicationBuilder().build()
@@ -271,10 +334,10 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
           "redirect to tech difficulties" in {
             val enrolments = Enrolments(Set())
 
-            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
               .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
-            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(any(), any()))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(using any(), any()))
               .thenReturn(Future.successful(ServerError))
 
             val app = applicationBuilder().build()
@@ -292,10 +355,10 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
             val enrolments = Enrolments(Set())
 
-            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
               .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
-            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(any(), any()))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(using any(), any()))
               .thenReturn(Future.successful(AlreadyClaimed))
 
             val app = applicationBuilder().build()
@@ -316,10 +379,10 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
             val enrolments = Enrolments(Set())
 
-            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
               .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
-            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(any(), any()))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(UTR(utr)))(using any(), any()))
               .thenReturn(Future.successful(NotClaimed))
 
             val app = applicationBuilder().build()
@@ -342,7 +405,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
         val app = applicationBuilder().build()
 
-        when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+        when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
           .thenReturn(Future failed BearerTokenExpired())
 
         val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(utr).url)
@@ -370,7 +433,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
           val app = applicationBuilder().build()
 
-          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
             .thenReturn(authRetrievals(AffinityGroup.Agent, noEnrollment))
 
           val request = FakeRequest(GET, controllers.routes.TrustAuthController.agentAuthorised().url)
@@ -389,7 +452,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
           val app = applicationBuilder().build()
 
-          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
             .thenReturn(authRetrievals(AffinityGroup.Agent, agentEnrolments))
 
           val request = FakeRequest(GET, controllers.routes.TrustAuthController.agentAuthorised().url)
@@ -406,7 +469,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
         "return OK" in {
 
-          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
             .thenReturn(authRetrievals(AffinityGroup.Agent, urnEnrolments))
 
           val predicatedMatcher = mEq(
@@ -415,7 +478,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
               .withDelegatedAuthRule("trust-auth")
           )
 
-          when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
+          when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(using any(), any()))
             .thenReturn(Future.successful(()))
 
           val app = applicationBuilder().build()
@@ -436,7 +499,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
           val enrolments = Enrolments(Set(agentEnrolment))
 
-          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
             .thenReturn(authRetrievals(AffinityGroup.Agent, enrolments))
 
           val predicatedMatcher = mEq(
@@ -445,7 +508,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
               .withDelegatedAuthRule("trust-auth")
           )
 
-          when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
+          when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(using any(), any()))
             .thenReturn(Future.failed(InsufficientEnrolments()))
 
           val app = applicationBuilder().build()
@@ -471,7 +534,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
             )
           )
 
-          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
             .thenReturn(authRetrievals(AffinityGroup.Agent, enrolments))
 
           val predicatedMatcher = mEq(
@@ -480,7 +543,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
               .withDelegatedAuthRule("trust-auth")
           )
 
-          when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(any(), any()))
+          when(mockAuthConnector.authorise(predicatedMatcher, mEq(EmptyRetrieval))(using any(), any()))
             .thenReturn(Future.failed(InsufficientEnrolments()))
 
           val app = applicationBuilder().build()
@@ -507,12 +570,12 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
             val enrolments = Enrolments(Set(urnTrustsEnrolment))
 
-            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
               .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
             val expectedRelationship = Relationship("Trusts", Set(BusinessKey("urn", urn)))
 
-            when(mockAuthConnector.authorise(mEq(expectedRelationship), mEq(EmptyRetrieval))(any(), any()))
+            when(mockAuthConnector.authorise(mEq(expectedRelationship), mEq(EmptyRetrieval))(using any(), any()))
               .thenReturn(Future.failed(FailedRelationship()))
 
             val app = applicationBuilder().build()
@@ -534,12 +597,12 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
             val enrolments = Enrolments(Set(urnTrustsEnrolment))
 
-            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
               .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
             val expectedRelationship = Relationship("Trusts", Set(BusinessKey("urn", urn)))
 
-            when(mockAuthConnector.authorise(mEq(expectedRelationship), mEq(EmptyRetrieval))(any(), any()))
+            when(mockAuthConnector.authorise(mEq(expectedRelationship), mEq(EmptyRetrieval))(using any(), any()))
               .thenReturn(Future.successful(()))
 
             val app = applicationBuilder().build()
@@ -562,10 +625,10 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
           "redirect to tech difficulties" in {
             val enrolments = Enrolments(Set())
 
-            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
               .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
-            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(any(), any()))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(using any(), any()))
               .thenReturn(Future.successful(ServerError))
 
             val app = applicationBuilder().build()
@@ -583,10 +646,10 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
             val enrolments = Enrolments(Set())
 
-            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
               .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
-            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(any(), any()))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(using  any(), any()))
               .thenReturn(Future.successful(AlreadyClaimed))
 
             val app = applicationBuilder().build()
@@ -607,10 +670,10 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
             val enrolments = Enrolments(Set())
 
-            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+            when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
               .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
-            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(any(), any()))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(using any(), any()))
               .thenReturn(Future.successful(NotClaimed))
 
             val app = applicationBuilder().build()
@@ -633,7 +696,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
         val app = applicationBuilder().build()
 
-        when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
+        when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
           .thenReturn(Future failed BearerTokenExpired())
 
         val request = FakeRequest(GET, controllers.routes.TrustAuthController.authorisedForIdentifier(urn).url)

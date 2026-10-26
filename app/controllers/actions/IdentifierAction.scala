@@ -20,8 +20,8 @@ import com.google.inject.{ImplementedBy, Inject}
 import models.{AgentUser, IdentifierRequest, IndividualUser, OrganisationUser}
 import play.api.Logging
 import play.api.http.Status.UNAUTHORIZED
-import play.api.mvc.Results._
-import play.api.mvc._
+import play.api.mvc.*
+import play.api.mvc.Results.*
 import uk.gov.hmrc.auth.core.AffinityGroup.{Agent, Individual, Organisation}
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.auth.core.retrieve.~
@@ -38,12 +38,12 @@ trait IdentifierAction
 class AuthenticatedIdentifierAction @Inject() (
   trustsAuthFunctions: TrustsAuthorisedFunctions,
   val parser: BodyParsers.Default
-)(implicit val executionContext: ExecutionContext)
+)(using val executionContext: ExecutionContext)
     extends IdentifierAction with Logging {
 
   override def invokeBlock[A](request: Request[A], block: IdentifierRequest[A] => Future[Result]): Future[Result] = {
 
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+    given hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
     val retrievals = Retrievals.internalId and
       Retrievals.affinityGroup and
