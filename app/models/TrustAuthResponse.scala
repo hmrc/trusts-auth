@@ -23,14 +23,17 @@ sealed trait TrustAuthResponse
 object TrustAuthResponse {
 
   given reads: Reads[TrustAuthResponse] =
-    (__ \ "arn").read[String]
+    (__ \ "arn")
+      .read[String]
       .map[TrustAuthResponse](TrustAuthAgentAllowed.apply)
       .orElse(
-        (__ \ "redirectUrl").read[String]
+        (__ \ "redirectUrl")
+          .read[String]
           .map[TrustAuthResponse](TrustAuthDenied.apply)
       )
       .orElse(
-        (__ \ "authorised").read[Boolean]
+        (__ \ "authorised")
+          .read[Boolean]
           .map[TrustAuthResponse](TrustAuthAllowed.apply)
       )
 

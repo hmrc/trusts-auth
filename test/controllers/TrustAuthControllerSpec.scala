@@ -41,7 +41,8 @@ import scala.concurrent.Future
 import uk.gov.hmrc.http.HeaderCarrier
 import scala.concurrent.ExecutionContext
 
-class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValues with RecoverMethods with BeforeAndAfterEach {
+class TrustAuthControllerSpec
+    extends SpecBase with ScalaFutures with EitherValues with RecoverMethods with BeforeAndAfterEach {
 
   private val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
 
@@ -91,7 +92,12 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
 
           val app = applicationBuilder().build()
 
-          when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any[HeaderCarrier](), any[ExecutionContext]()))
+          when(
+            mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using
+              any[HeaderCarrier](),
+              any[ExecutionContext]()
+            )
+          )
             .thenReturn(authRetrievals(AffinityGroup.Agent, noEnrollment))
 
           val request = FakeRequest(GET, controllers.routes.TrustAuthController.agentAuthorised().url)
@@ -649,7 +655,7 @@ class TrustAuthControllerSpec extends SpecBase with ScalaFutures with EitherValu
             when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
               .thenReturn(authRetrievals(AffinityGroup.Organisation, enrolments))
 
-            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(using  any(), any()))
+            when(mockEnrolmentStoreConnector.checkIfAlreadyClaimed(mEq(URN(urn)))(using any(), any()))
               .thenReturn(Future.successful(AlreadyClaimed))
 
             val app = applicationBuilder().build()

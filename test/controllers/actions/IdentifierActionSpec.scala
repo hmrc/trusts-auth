@@ -267,8 +267,8 @@ class IdentifierActionSpec extends SpecBase {
         val application = applicationBuilder().build()
 
         val retrievals: RetrievalType =
-          new~(
-            new~(
+          new ~(
+            new ~(
               Option.empty[String],
               Some(AffinityGroup.Agent)
             ),
@@ -282,7 +282,7 @@ class IdentifierActionSpec extends SpecBase {
           )(using any(), any())
         ).thenReturn(Future.successful(retrievals))
 
-        val action = new AuthenticatedIdentifierAction(trustsAuth, bodyParsers)
+        val action     = new AuthenticatedIdentifierAction(trustsAuth, bodyParsers)
         val controller = new Harness(action)
 
         val result = controller.onPageLoad()(fakeRequest)

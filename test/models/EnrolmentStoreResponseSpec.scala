@@ -27,9 +27,9 @@ class EnrolmentStoreResponseSpec extends SpecBase {
   private val url = "/enrolment-store-proxy/enrolment-store/enrolments"
 
   private def readResponse(
-                            status: Int,
-                            body: String = ""
-                          ): EnrolmentStoreResponse =
+    status: Int,
+    body: String = ""
+  ): EnrolmentStoreResponse =
     httpReads.read(
       "GET",
       url,
@@ -37,9 +37,9 @@ class EnrolmentStoreResponseSpec extends SpecBase {
     )
 
   private def enrolmentStoreJson(
-                                  principalUserIds: Seq[String],
-                                  delegatedUserIds: Seq[String]
-                                ): String =
+    principalUserIds: Seq[String],
+    delegatedUserIds: Seq[String]
+  ): String =
     Json.stringify(
       Json.obj(
         "principalUserIds" -> principalUserIds,
@@ -145,4 +145,5 @@ class EnrolmentStoreResponseSpec extends SpecBase {
       }
     }
   }
+
 }
