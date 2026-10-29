@@ -24,22 +24,19 @@ import models.*
 import models.EnrolmentStoreResponse.{AlreadyClaimed, NotClaimed, ServerError}
 import org.mockito.ArgumentMatchers.{any, eq as mEq}
 import org.mockito.Mockito
-import org.mockito.Mockito.when
-import org.mockito.Mockito.reset
+import org.mockito.Mockito.{reset, when}
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{EitherValues, RecoverMethods}
-import org.scalatest.BeforeAndAfterEach
+import org.scalatest.{BeforeAndAfterEach, EitherValues, RecoverMethods}
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.auth.core.retrieve.{EmptyRetrieval, Retrieval, ~}
+import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import uk.gov.hmrc.http.HeaderCarrier
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class TrustAuthControllerSpec
     extends SpecBase with ScalaFutures with EitherValues with RecoverMethods with BeforeAndAfterEach {

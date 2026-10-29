@@ -16,7 +16,7 @@
 
 package models
 
-import play.api.libs.json.{Format, Json, Reads, Writes, __}
+import play.api.libs.json.*
 
 sealed trait TrustAuthResponse
 

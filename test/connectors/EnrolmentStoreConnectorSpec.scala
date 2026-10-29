@@ -19,7 +19,7 @@ package connectors
 import base.SpecBase
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
-import models.EnrolmentStoreResponse.{AlreadyClaimed, BadRequest, Forbidden, NotClaimed, ServiceUnavailable}
+import models.EnrolmentStoreResponse.*
 import models.{URN, UTR}
 import play.api.Application
 import play.api.http.Status

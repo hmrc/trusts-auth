@@ -17,6 +17,7 @@
 package implicits
 
 import com.typesafe.config.ConfigList
+
 import scala.jdk.CollectionConverters.*
 
 object Config {
