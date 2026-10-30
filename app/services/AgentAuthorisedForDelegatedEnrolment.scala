@@ -19,7 +19,7 @@ package services
 import com.google.inject.Inject
 import config.AppConfig
 import controllers.actions.TrustsAuthorisedFunctions
-import models.{TrustAuthAllowed, TrustAuthDenied, TrustAuthResponse, TrustIdentifier, URN, UTR}
+import models.*
 import play.api.Logging
 import uk.gov.hmrc.auth.core.{Enrolment, InsufficientEnrolments}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -32,7 +32,7 @@ class AgentAuthorisedForDelegatedEnrolment @Inject() (trustsAuth: TrustsAuthoris
 
   def authenticate[A](
     identifier: TrustIdentifier
-  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TrustAuthResponse] = {
+  )(using hc: HeaderCarrier, ec: ExecutionContext): Future[TrustAuthResponse] = {
 
     val predicate = identifier match {
       case UTR(_) =>

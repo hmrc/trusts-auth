@@ -18,7 +18,7 @@ package controllers.actions
 
 import com.google.inject.Inject
 import models.{AgentUser, IdentifierRequest, OrganisationUser}
-import play.api.mvc._
+import play.api.mvc.*
 import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments}
 
 import scala.concurrent.{ExecutionContext, Future}

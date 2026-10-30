@@ -32,7 +32,7 @@ class TrustsIV @Inject() (trustsAuth: TrustsAuthorisedFunctions) extends Logging
     identifier: TrustIdentifier,
     onIVRelationshipExisting: => Future[TrustAuthResponse],
     onIVRelationshipNotExisting: => Future[TrustAuthResponse]
-  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TrustAuthResponse] = {
+  )(using hc: HeaderCarrier, ec: ExecutionContext): Future[TrustAuthResponse] = {
 
     val relationship = identifier match {
       case UTR(utr) =>

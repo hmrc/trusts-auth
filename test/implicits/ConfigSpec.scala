@@ -18,7 +18,7 @@ package implicits
 
 import base.SpecBase
 import com.typesafe.config.ConfigList
-import implicits.Config.TypedConfigList
+import implicits.Config.*
 import play.api.inject.guice.GuiceApplicationBuilder
 
 class ConfigSpec extends SpecBase {

@@ -17,15 +17,15 @@
 package models
 
 import play.api.Logging
-import play.api.http.Status._
-import play.api.libs.json._
+import play.api.http.Status.*
+import play.api.libs.json.*
 import uk.gov.hmrc.http.{HttpReads, HttpResponse}
 
 sealed trait EnrolmentStoreResponse
 
 object EnrolmentStoreResponse extends Logging {
 
-  implicit val format: Format[EnrolmentStore] = Json.format[EnrolmentStore]
+  given format: Format[EnrolmentStore] = Json.format[EnrolmentStore]
 
   case class EnrolmentStore(principalUserIds: Seq[String], delegatedUserIds: Seq[String]) extends EnrolmentStoreResponse
 
@@ -41,8 +41,8 @@ object EnrolmentStoreResponse extends Logging {
 
   case object AlreadyClaimed extends EnrolmentStoreResponse
 
-  implicit lazy val httpReads: HttpReads[EnrolmentStoreResponse] =
-    (method: String, url: String, response: HttpResponse) => {
+  given httpReads: HttpReads[EnrolmentStoreResponse] =
+    (_: String, _: String, response: HttpResponse) => {
       logger.debug(s"[EnrolmentStoreResponse] Response status received from ES0 api: ${response.status}")
 
       response.status match {

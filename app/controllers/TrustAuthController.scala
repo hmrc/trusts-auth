@@ -20,11 +20,11 @@ import com.google.inject.{Inject, Singleton}
 import config.AppConfig
 import connectors.EnrolmentStoreConnector
 import controllers.actions.IdentifierAction
+import models.*
 import models.EnrolmentStoreResponse.{AlreadyClaimed, NotClaimed}
-import models._
 import play.api.Logging
 import play.api.libs.json.Json
-import play.api.mvc._
+import play.api.mvc.*
 import services.{AgentAuthorisedForDelegatedEnrolment, TrustsIV}
 import uk.gov.hmrc.auth.core.AffinityGroup.{Agent, Organisation}
 import uk.gov.hmrc.auth.core.{EnrolmentIdentifier, Enrolments}
@@ -43,11 +43,11 @@ class TrustAuthController @Inject() (
   config: AppConfig,
   trustsIV: TrustsIV,
   delegatedEnrolment: AgentAuthorisedForDelegatedEnrolment
-)(implicit ec: ExecutionContext)
+)(using ec: ExecutionContext)
     extends BackendController(cc) with Logging {
 
   def authorisedForIdentifier(identifier: String): Action[AnyContent] = identifierAction.async { implicit request =>
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+    given hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
     mapResult(request.user.affinityGroup match {
       case Agent        =>
@@ -62,8 +62,8 @@ class TrustAuthController @Inject() (
     })
   }
 
-  def agentAuthorised(): Action[AnyContent] = identifierAction.async { implicit request =>
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+  def agentAuthorised(): Action[AnyContent] = identifierAction.async { request =>
+    given hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
     mapResult(request.user.affinityGroup match {
       case Agent        =>
@@ -83,7 +83,7 @@ class TrustAuthController @Inject() (
     case r: TrustAuthResponse         => Ok(Json.toJson(r))
   }
 
-  private def authoriseAgent[A](request: IdentifierRequest[A])(implicit hc: HeaderCarrier): TrustAuthResponse =
+  private def authoriseAgent[A](request: IdentifierRequest[A])(using hc: HeaderCarrier): TrustAuthResponse =
 
     getAgentReferenceNumber(request.user.enrolments) match {
       case Some(arn) if arn.nonEmpty =>
@@ -97,13 +97,13 @@ class TrustAuthController @Inject() (
 
   private def getAgentReferenceNumber(enrolments: Enrolments): Option[String] =
     enrolments.enrolments
-      .find(_.key equals config.AGENT_ENROLMENT)
-      .flatMap(_.identifiers.find(_.key equals config.AGENT_ENROLMENT_ID))
+      .find(_.key.equals(config.AGENT_ENROLMENT))
+      .flatMap(_.identifiers.find(_.key.equals(config.AGENT_ENROLMENT_ID)))
       .collect { case EnrolmentIdentifier(_, value) => value }
 
   private def checkIfTrustIsClaimedAndTrustIV[A](
     identifier: TrustIdentifier
-  )(implicit request: IdentifierRequest[A], hc: HeaderCarrier): Future[TrustAuthResponse] = {
+  )(using request: IdentifierRequest[A], hc: HeaderCarrier): Future[TrustAuthResponse] = {
 
     val userEnrolled = checkForTrustEnrolmentForIdentifier(identifier)
 
@@ -142,7 +142,7 @@ class TrustAuthController @Inject() (
 
   private def checkIfTrustAlreadyClaimed(
     identifier: TrustIdentifier
-  )(implicit hc: HeaderCarrier): Future[TrustAuthResponse] =
+  )(using hc: HeaderCarrier): Future[TrustAuthResponse] =
     enrolmentStoreConnector.checkIfAlreadyClaimed(identifier) flatMap {
       case AlreadyClaimed =>
         logger.info(
@@ -166,7 +166,7 @@ class TrustAuthController @Inject() (
 
   private def checkIfAgentAuthorised[A](
     identifier: TrustIdentifier
-  )(implicit hc: HeaderCarrier): Future[TrustAuthResponse] = {
+  )(using hc: HeaderCarrier): Future[TrustAuthResponse] = {
     logger.info(
       s"[TrustAuthController][checkIfAgentAuthorised][Session ID: ${Session.id(hc)}] ${identifier.value} checking if agent is authorised"
     )
@@ -175,18 +175,18 @@ class TrustAuthController @Inject() (
 
   private def checkForTrustEnrolmentForIdentifier[A](
     identifier: TrustIdentifier
-  )(implicit request: IdentifierRequest[A]): Boolean =
+  )(using request: IdentifierRequest[A]): Boolean =
     identifier match {
       case UTR(value) =>
         request.user.enrolments.enrolments
-          .find(_.key equals config.TAXABLE_ENROLMENT)
-          .flatMap(_.identifiers.find(_.key equals config.TAXABLE_ENROLMENT_ID))
-          .exists(_.value equals value)
+          .find(_.key.equals(config.TAXABLE_ENROLMENT))
+          .flatMap(_.identifiers.find(_.key.equals(config.TAXABLE_ENROLMENT_ID)))
+          .exists(_.value.equals(value))
       case URN(value) =>
         request.user.enrolments.enrolments
-          .find(_.key equals config.NON_TAXABLE_ENROLMENT)
-          .flatMap(_.identifiers.find(_.key equals config.NON_TAXABLE_ENROLMENT_ID))
-          .exists(_.value equals value)
+          .find(_.key.equals(config.NON_TAXABLE_ENROLMENT))
+          .flatMap(_.identifiers.find(_.key.equals(config.NON_TAXABLE_ENROLMENT_ID)))
+          .exists(_.value.equals(value))
     }
 
 }

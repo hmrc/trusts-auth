@@ -20,13 +20,13 @@ import base.SpecBase
 import config.AppConfig
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito
-import org.mockito.Mockito._
+import org.mockito.Mockito.*
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.{Action, AnyContent, BodyParsers, Results}
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
-import uk.gov.hmrc.auth.core._
+import play.api.test.Helpers.*
+import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.auth.core.retrieve.{AgentInformation, Retrieval, ~}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -53,8 +53,7 @@ class IdentifierActionSpec extends SpecBase {
 
   private def authRetrievals(
     affinityGroup: AffinityGroup,
-    enrolment: Enrolments,
-    agentInformation: AgentInformation
+    enrolment: Enrolments
   ): Future[Some[String] ~ Some[AffinityGroup] ~ Enrolments] =
     Future.successful(new ~(new ~(Some("id"), Some(affinityGroup)), enrolment))
 
@@ -81,8 +80,8 @@ class IdentifierActionSpec extends SpecBase {
 
         val application = applicationBuilder().build()
 
-        when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
-          .thenReturn(authRetrievals(AffinityGroup.Agent, agentEnrolment, agentInformation))
+        when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
+          .thenReturn(authRetrievals(AffinityGroup.Agent, agentEnrolment))
 
         val action     = new AuthenticatedIdentifierAction(trustsAuth, bodyParsers)
         val controller = new Harness(action)
@@ -98,8 +97,8 @@ class IdentifierActionSpec extends SpecBase {
 
         val application = applicationBuilder().build()
 
-        when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
-          .thenReturn(authRetrievals(AffinityGroup.Organisation, agentEnrolment, agentInformation))
+        when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
+          .thenReturn(authRetrievals(AffinityGroup.Organisation, agentEnrolment))
 
         val action     = new AuthenticatedIdentifierAction(trustsAuth, bodyParsers)
         val controller = new Harness(action)
@@ -115,8 +114,8 @@ class IdentifierActionSpec extends SpecBase {
 
         val application = applicationBuilder().build()
 
-        when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any()))
-          .thenReturn(authRetrievals(AffinityGroup.Individual, noEnrollment, agentInformation))
+        when(mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any()))
+          .thenReturn(authRetrievals(AffinityGroup.Individual, noEnrollment))
 
         val action     = new AuthenticatedIdentifierAction(trustsAuth, bodyParsers)
         val controller = new Harness(action)
@@ -134,8 +133,8 @@ class IdentifierActionSpec extends SpecBase {
         val application = applicationBuilder().build()
 
         when(
-          mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any())
-        ) thenReturn (Future failed MissingBearerToken())
+          mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any())
+        ).thenReturn(Future failed MissingBearerToken())
 
         val action     = new AuthenticatedIdentifierAction(trustsAuth, bodyParsers)
         val controller = new Harness(action)
@@ -153,8 +152,8 @@ class IdentifierActionSpec extends SpecBase {
         val application = applicationBuilder().build()
 
         when(
-          mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any())
-        ) thenReturn (Future failed BearerTokenExpired())
+          mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any())
+        ).thenReturn(Future failed BearerTokenExpired())
 
         val action     = new AuthenticatedIdentifierAction(trustsAuth, bodyParsers)
         val controller = new Harness(action)
@@ -172,8 +171,8 @@ class IdentifierActionSpec extends SpecBase {
         val application = applicationBuilder().build()
 
         when(
-          mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any())
-        ) thenReturn (Future failed InsufficientEnrolments())
+          mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any())
+        ).thenReturn(Future failed InsufficientEnrolments())
 
         val action     = new AuthenticatedIdentifierAction(trustsAuth, bodyParsers)
         val controller = new Harness(action)
@@ -191,8 +190,8 @@ class IdentifierActionSpec extends SpecBase {
         val application = applicationBuilder().build()
 
         when(
-          mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any())
-        ) thenReturn (Future failed InsufficientConfidenceLevel())
+          mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any())
+        ).thenReturn(Future failed InsufficientConfidenceLevel())
 
         val action     = new AuthenticatedIdentifierAction(trustsAuth, bodyParsers)
         val controller = new Harness(action)
@@ -210,8 +209,8 @@ class IdentifierActionSpec extends SpecBase {
         val application = applicationBuilder().build()
 
         when(
-          mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any())
-        ) thenReturn (Future failed UnsupportedAuthProvider())
+          mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any())
+        ).thenReturn(Future failed UnsupportedAuthProvider())
 
         val action     = new AuthenticatedIdentifierAction(trustsAuth, bodyParsers)
         val controller = new Harness(action)
@@ -229,8 +228,8 @@ class IdentifierActionSpec extends SpecBase {
         val application = applicationBuilder().build()
 
         when(
-          mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any())
-        ) thenReturn (Future failed UnsupportedAffinityGroup())
+          mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any())
+        ).thenReturn(Future failed UnsupportedAffinityGroup())
 
         val action     = new AuthenticatedIdentifierAction(trustsAuth, bodyParsers)
         val controller = new Harness(action)
@@ -248,14 +247,47 @@ class IdentifierActionSpec extends SpecBase {
         val application = applicationBuilder().build()
 
         when(
-          mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(any(), any())
-        ) thenReturn (Future failed UnsupportedCredentialRole())
+          mockAuthConnector.authorise(any(), any[Retrieval[RetrievalType]]())(using any(), any())
+        ).thenReturn(Future failed UnsupportedCredentialRole())
 
         val action     = new AuthenticatedIdentifierAction(trustsAuth, bodyParsers)
         val controller = new Harness(action)
         val result     = controller.onPageLoad()(fakeRequest)
 
         status(result) mustBe UNAUTHORIZED
+
+        application.stop()
+      }
+    }
+
+    "the user has no internal ID" must {
+
+      "return UNAUTHORIZED when internal ID cannot be retrieved" in {
+
+        val application = applicationBuilder().build()
+
+        val retrievals: RetrievalType =
+          new ~(
+            new ~(
+              Option.empty[String],
+              Some(AffinityGroup.Agent)
+            ),
+            noEnrollment
+          )
+
+        when(
+          mockAuthConnector.authorise(
+            any(),
+            any[Retrieval[RetrievalType]]()
+          )(using any(), any())
+        ).thenReturn(Future.successful(retrievals))
+
+        val action     = new AuthenticatedIdentifierAction(trustsAuth, bodyParsers)
+        val controller = new Harness(action)
+
+        val result = controller.onPageLoad()(fakeRequest)
+
+        status(result).mustBe(UNAUTHORIZED)
 
         application.stop()
       }
